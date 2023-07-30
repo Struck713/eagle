@@ -15,12 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import fs from 'fs';
-import yn from 'yesno';
 import axios from 'axios';
 import cheerio from 'cheerio';
+import fs from 'fs';
 import progress from 'progress';
-import tableparse from 'cheerio-tableparser';
 
 type Course = {
     name: string;
@@ -60,197 +58,113 @@ enum ContentArea {
 
 const DEFAULT_PREREQS = 'There are no prerequisites for this course.';
 const DEFAULT_DESC = 'There is no description provided for this course.';
+const TITLE_REGEX = /^([a-zA-Z]{2,4})\s(\d{0,5})\s+(.+)\n?\s+([\d-,]+)\s(?:Credit Hours?)/;
 
 const generateCourseMappings = async () => {
     console.log('[*] Preparing to generate mappings..');
     let start = Date.now();
     let $ = await axios
-        .get('https://catalog.uconn.edu/course-search/')
+        .get('https://catalog.kent.edu/coursesaz/')
         .then(res => res.data)
         .then(res => cheerio.load(res))
         .catch(_ => null);
 
     if (!$) return console.error('Failed to retrieve data from the web.');
 
-    tableparse($);
-
     let courses: Course[] = [];
-    let table: string[][] = ($('.tablesorter') as any).parsetable();
+    let urls: string[] = $(".letternav-head").next("ul").children("li").map((_, val) => $(val).children("a").attr("href")).get();
 
+    // skip length check (we cannot query that data on the fly)
     if (fs.existsSync('./courses.json')) {
-        let existing = JSON.parse(fs.readFileSync('./courses.json', { encoding: 'utf8' }));
-        if (table[3].length === existing.length) {
-            const cont = await yn({ question: '[*] Catalog response has the same amount of entries as your existing mappings, continue?' });
-            if (!cont) return;
-        }
-        
-        let date = Date.now();
+        let date = Date.now()
         console.log(`[*] Existing mappings saved to [courses-${date}.json]`);
-        console.log(`[*] Remote: ${table[3].length}, local: ${existing.length}, delta: ${table[3].length - existing.length}`);
-        
-        let remoteCourses = table[3].slice(1).map((val, i) => `${val}${table[4][i]}`);
-        let delta = existing.filter((course: Course) => !remoteCourses.find((val: string) => val === course.name));
-
-        courses = [...delta];
-        console.log(`[*] Imported ${delta.length.toLocaleString()} legacy course mappings.`);
-        
         fs.copyFileSync('./courses.json', `./courses-${date}.json`);
     }
 
-    console.log(`[*] Ready to generate mappings for ${table[3].length.toLocaleString()} courses.`);
-    let bar = new progress(':course [:bar] :rate/rps :etas (:current/:total) (:percent done)', {
+    console.log(`[*] Ready to generate mappings for ${urls.length.toLocaleString()} course sections.`);
+    let bar = new progress(':url [:bar] :rate/rps :etas (:current/:total) (:percent done)', {
         complete: '=',
         incomplete: ' ',
         width: 20,
-        total: table[3].length
+        total: urls.length
     });
 
-    for (let i = 1; i < table[3].length; i++) {
-        let row = assembleRow(table, i);
-        let res = await lookup(row.subject, row.number.toString());
-        if (!res) {
-            res = {
-                credits: NaN.toString(),
-                desc: 'Unavailable',
-                grading: 'Unavailable',
-                prereqs: 'Unavailable'
+    for (let i = 1; i < urls.length; i++) {
+        let target = `https://catalog.kent.edu${urls[i]}`;
+        let $: cheerio.Root = await axios
+            .get(target)
+            .then(res => res.data)
+            .then(data => cheerio.load(data))
+            .catch(_ => null);
+
+        if (!$) continue;
+
+        $(".courseblock").each((index, _) => {
+            let block = $(_);
+
+            let title = readTitle(block.children(".courseblocktitle").text());
+            let description = block.children(".courseblockdesc").first();
+            let attributes = readAttributes(description.nextAll(".courseblockdesc").get().map(_ => $(_).text()));
+            
+            if (!title || !description) {
+                console.error("Could not parse:", block.children(".courseblocktitle").text());
+                return;
             }
-        }
-
-        let course: Course = {
-            name: row.subject + row.number,
-            catalogName: row.name,
-            catalogNumber: row.number,
-            prerequisites: res.prereqs,
-            attributes: {
-                lab: hasCompetency(row, 'CA3LAB'),
-                writing: hasCompetency(row, 'COMPW'),
-                quantitative: hasCompetency(row, 'COMPQ'),
-                environmental: hasCompetency(row, 'COMPE'),
-                contentAreas: row
-                    .attrib
-                    .map(attrib => attrib === 'CA3LAB'
-                        ? 'CA3'
-                        : attrib)
-                    .filter(attrib => attrib.startsWith('CA'))
-                    .map(attrib => ContentArea[attrib.toUpperCase()]),
-                graduate: false
-            },
-            credits: parseInt(res.credits),
-            grading: res.grading,
-            description: res.desc,
-        }
-
-        bar.tick({
-            course: ((i + 1) >= table[3].length)
-                ? 'done'
-                : table[3][i + 1] + table[4][i + 1]
+            
+            courses.push({
+                name: title.subject + title.number,
+                catalogName: title.name,
+                catalogNumber: title.number,
+                prerequisites: attributes["Prerequisite"] ?? DEFAULT_PREREQS,
+                attributes: {
+                    lab: false, //hasCompetency(row, 'CA3LAB'),
+                    writing: false, //hasCompetency(row, 'COMPW'),
+                    quantitative: false, //hasCompetency(row, 'COMPQ'),
+                    environmental: false, //hasCompetency(row, 'COMPE'),
+                    contentAreas: [],
+                    graduate: parseInt(title.number) >= 50000
+                },
+                credits: title.credits,
+                grading: attributes["Grade Mode"] ?? "Unavailable",
+                description: description.text().trim() ?? DEFAULT_DESC,
+            });
         });
 
-        courses.push(course);
+        bar.tick({
+            url: ((i + 1) >= urls.length)
+                ? 'done'
+                : urls[i + 1]
+        });
     }
 
     fs.writeFileSync('./courses.json', JSON.stringify(courses.sort((a, b) => a.name.localeCompare(b.name)), null, 3));
     console.log(`\n[*] Finished generating mappings for ${courses.length} courses in ${getLatestTimeValue(Date.now() - start)}.`);
 }
 
-const lookup = async (prefix: string, number: string) => {
-    let target = `https://catalog.uconn.edu/directory-of-courses/course/${prefix}/${number}/`;
-    let res = await axios
-        .get(target)
-        .then(res => res.data)
-        .catch(_ => null);
+const readTitle = (title?: string) => {
+    let groups = title.match(TITLE_REGEX);
+    if (!title || !groups) return null;
+    return {
+        subject: groups[1],
+        number: groups[2],
+        name: groups[3].trim(),
+        credits: parseInt(groups[4])
+    };
+}
 
-    if (!res) {
-        return null;
+const readAttributes = (attributes?: string[]) => {
+   let map = {};
+    for (let attrib of attributes) {
+         let [ key, value ] = attrib.split(": ");
+         map[key] = value.trim();
     }
-
-    let $ = cheerio.load(res);
-
-    let grading = $('.grading-basis')
-        .text()
-        .trim()
-        .split('Grading Basis: ')[1] || 'Graded';
-
-    let credits = $('.credits')
-        .text()
-        .trim() === 'Zero credits'
-            ? "0"
-            : $('.credits')
-                .text()
-                .trim()
-                .split(' ')[0] || 'Unknown Credits';
-
-    let prereqs = $('.prerequisites').text() || DEFAULT_PREREQS;
-    if (prereqs && prereqs !== DEFAULT_PREREQS) {
-        let parts = prereqs
-            .trim()
-            .split(/Prerequisite(?:s){0,1}\:\s/);
-
-        prereqs = parts.length === 1 ? parts[0] : parts[1];
-        
-        if (prereqs.includes('None.'))
-            prereqs = DEFAULT_PREREQS;
-        
-        if (prereqs.includes('Recommended Preparation'))
-            prereqs = prereqs.split('Recommended Preparation')[0].trim()
-    }
-
-    let desc = $('.description').text() || DEFAULT_DESC;
-    return { grading, credits, prereqs, desc };
+    return map;
 }
 
 const hasCompetency = (row: CoursePayload, competency: string) =>
     row
         .attrib
         .some(attrib => attrib === competency.toUpperCase());
-
-const assembleRow = (res: string[][], index: number) => {
-    let payload: CoursePayload = {} as any;
-    let filtered = [
-        {
-            index: 1,
-            name: 'href',
-            apply: (raw: string) => cheerio
-                .load(raw.trim())('a')
-                .attr('href')
-        },
-        {
-            index: 3,
-            name: 'subject'
-        },
-        {
-            index: 4,
-            name: 'number',
-        },
-        {
-            index: 5,
-            name: 'name'
-        },
-        {
-            index: 6,
-            name: 'attrib',
-            apply: (raw: string) => {
-                let $ = cheerio.load(raw);
-                let k = '';
-
-                $('a').each((i) => {
-                    k += $(`a:nth-child(${i + 1})`).text() + ' ';
-                });
-
-                return (k && k.length)
-                    ? k.trim().split(' ')
-                    : [];
-            }
-        }
-    ];
-    
-    filtered.forEach(ent => payload[ent.name] = ent.apply
-        ? ent.apply(res[ent.index][index])
-        : res[ent.index][index]);
-
-    return payload;
-};
 
 const getLatestTimeValue = (time: number) => {
     let sec = Math.trunc(time / 1000) % 60;

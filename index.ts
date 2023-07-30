@@ -67,8 +67,8 @@ export enum ContentAreaNames {
 }
 
 export enum GradingTypeNames {
-    GRADED = 'Graded',
-    SATISFACTORY_UNSATISFACTORY = 'S/U',
+    GRADED = 'Standard Letter',
+    SATISFACTORY_UNSATISFACTORY = 'Satisfactory/Unsatisfactory',
     HONORS_CREDIT = 'Honors',
     REGISTERED = 'Registered'
 }
