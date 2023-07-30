@@ -1,10 +1,10 @@
-# Husky
+# Eagle
 
-![version badge](https://img.shields.io/github/package-json/v/ilefa/husky?color=2573bc)
-![vuln badge](https://img.shields.io/snyk/vulnerabilities/github/ilefa/husky)
-![codeql badge](https://img.shields.io/github/workflow/status/ilefa/husky/CodeQL?label=codeql%20analysis)
+![version badge](https://img.shields.io/github/package-json/v/Struck713/eagle?color=2573bc)
+![vuln badge](https://img.shields.io/snyk/vulnerabilities/github/Struck713/eagle)
+![codeql badge](https://img.shields.io/github/workflow/status/Struck713/eagle/CodeQL?label=codeql%20analysis)
 
-Husky is a TypeScript library that contains several useful utilities for interfacing with UConn services.
+Eagle is a TypeScript library that contains several useful utilities for interfacing with UConn services.
 
 ## Installation
 
