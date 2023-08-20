@@ -304,113 +304,129 @@ export enum LectureCaptureType {
 }
 
 export enum BuildingCode {
-    ABL = "Agricultural Biotechnology Laboratory",
-    ACS = "Art Ceramic Studio",
-    ACD = "Avery Point",
-    ADC = "Art Design Building",
-    AES = "Architectural and Engineering Services",
-    APS = "Art Printshop",
-    ARJ = "Arjona",
-    ARTB = "Art Building",
-    ATWR = "Atwater Laboratory",
-    AUST = "Austin",
-    B1 = "Biobehavioral Science #1",
-    B3 = "Biobehavioral Science #3",
-    B4_A = "Biobehavioral Science #4 and Annex",
-    B5 = "Biobehavioral Science #5",
-    BCH = "Beach Hall",
-    BISH = "Bishop",
-    BOUS = "W.A. Bousfield",
-    BPB = "Biology/Physics Building",
-    BRON = "Bronwell",
-    BUSN = "School of Business",
-    CAST = "Castleman",
-    CHEM = "Chemistry Building",
-    CRU = "Cattle Resource Center",
-    DODD = "Dodd Center",
-    DRMU = "Drama/Music Building",
-    DWTN = "Stamford Downtown",
-    E2 = "Engineering II",
-    FG = "Floriculture Greenhouse",
-    FSB = "Family Studies Building",
-    GAMP = "Gampel Pavilion",
-    GANT = "Gant Central Building",
-    GC = "Gant Central Building",
-    GENT = "Gentry",
-    GN = "Gant North Building",
-    GP = "Gant Plaza Building",
-    GRE = "Greer Field House",
-    GS = "Gant South Building",
-    GW = "Gant West Building",
-    HALL = "Hall Dorm",
-    HAWL = "Hawley Armory",
-    HBL = "Homer Babbidge Library",
-    HDC = "Human Development Center",
-    HEW = "Hewitt",
-    HH = "Honors House",
-    HJT = "Jorgensen Theatre",
-    HPL = "Hartford Public Library",
-    HTB = "Hartford Times Building",
-    HU1 = "Horse Unit 1",
-    HU2 = "Horse Unit 2",
-    IMS = "Gant North Building",
-    ITE = "Information Technology Engineering",
-    JONS = "RE. Jones",
-    JRB = "J. Ray Ryan Building",
-    KEL = "Kellogg Dairy Center",
-    KLIN = "M.S. Klinck",
-    KNS = "Koons Hall",
-    LAFA = "Lafayette",
-    LH = "McHugh Hall",
-    LSA = "Life Science Annex",
-    LOR = "Lorentzon Stables",
-    LU1 = "Livestock Unit 1",
-    LU2 = "Livestock Unit 2",
-    MAN = "Manchester Hall",
-    MARN = "Avery Point Marine Science",
-    MCHU = "McHugh Hall",
-    MONT = "Monteith",
-    MSB = "Gant South Building",
-    MUSB = "Music Building",
-    MLIB = "Music Library",
-    OAK = "Oak Hall",
-    PB = "Gant West Building",
-    PBB = "Pharmacy/Biology Building",
-    PCSB = "D.C. Phillips",
-    PR = "Putnam Refectory",
-    PU1 = "Poultry Farm Unit 1",
-    RHBA = "Ratcliffe Hicks",
-    ROWE = "John W. Rowe Center",
-    SCI1 = 'Science One Research Center',
-    SCHN = "Andre Schenker",
-    SHA = "Storrs Hall Annex",
-    SPRH = "Shipee Hall",
-    SRH = "Sprague Hall",
-    SSW = "Hartford Social Work",
-    STRS = "Storrs Hall",
-    STRSWW = "Widmer Wing",
-    TLS = "Torrey Life Sciences",
-    TSK = "Tasker Building",
-    USRH = "Stamford Residence Hall",
-    UTEB = "United Technologies Building",
-    VARC = "Visual Arts Resource Center",
-    VDM = "J. Louis von der Mehden Recital Hall",
-    WCB = "Wilbur Cross Building",
-    WGC = "Graduate Center",
-    WITE = "George C. White Building",
-    WH = "Wood Hall",
-    WSH = "Williams Student Health",
-    WSRH = "Wilson South Residence Hall",
-    WTBY = "Waterbury Downtown",
-    YNG = "W.B. Young"
+    AFC = "FedEx Aeronautics Academic Center",
+    AAC = "Allerton Sports Complex",
+    AIR = "Airport Hangar/Office Bldg.", 
+    ALN = "Allyn Hall",
+    ANX = "M.A.C.C. Annex",
+    ASB = "Administrative Service Building",
+    ATB = "Aeronautics and Engineering Building",
+    BEA = "Twin Towers Center",
+    BEL = "Beall Hall",
+    BOW = "Bowman Hall",
+    BSA = "Business Administration Building",
+    BST = "Baseball and Softball Training Facility",
+    CAE = "Center for Architecture and Environmental Design",
+    CBH = "Golf Course Clubhouse",
+    CCA = "Centennial Court A",
+    CCB = "Centennial Court B",
+    CCC = "Centennial Court C",
+    CCD = "Centennial Court D",
+    CCE = "Centennial Court E",
+    CCF = "Centennial Court F",
+    CDC = "Child Development Center",
+    CHH = "Cunningham Hall and Research Wing",
+    CHA = "Cunningham Hall and Research Wing",
+    CLK = "Clark Hall",
+    CPA = "Center for the Performing Arts",
+    CPM = "College of Podiatric Medicine",
+    CUD = "Cleveland Urban Design Collaborative",
+    CUE = "Center for Undergraduate Excellence", 
+    CVA = "Center for the Visual Arts",
+    CWH = "Cartwright Hall",
+    CWP = "East Campus Chilled Water Plant",
+    DHC = "DeWeese Health Center",
+    DIH = "Design Innovation Hub",
+    DIX = "Dix Stadium",
+    DSB = "Dix Storage Building",
+    DTB = "Centennial Research Park",
+    DUN = "Dunbar Hall",
+    ENG = "Engleman Hall",
+    EWC = "Eastway Center",
+    FBC = "Flight Briefing Center",
+    FLD = "Field House",
+    FLR = "Fletcher Hall",
+    FRH = "Franklin Hall",
+    FRA = "Franklin Hall Addition",
+    GCM = "Golf Course Maintenance Building",
+    GHA = "Kappa Sigma",
+    GST = "Guest House",
+    GTC = "Golf Training Center",
+    HAR = "Harbourt Hall",
+    HDN = "Henderson Hall",
+    HRH = "Heer Hall",
+    IAB = "Center for Philanthropy and Alumni Engagement",
+    ICA = "Ice Arena", 
+    ISB = "Integrated Sciences Building",
+    JHN = "Johnson Hall", 
+    KBC = "WKSU Broadcast Center", 
+    KOO = "Koonce Hall", 
+    KOR = "Korb Hall", 
+    KTH = "Kent Hall and South Wing",
+    KTA = "Kent Hall and South Wing",
+    LAK = "Lake Hall",
+    LCM = "Liquid Crystals Materials Science Building", 
+    LEE = "Leebrick Hall",
+    LIB = "Library", 
+    LNB = "Lincoln Building",
+    LRH = "Lowry Hall",
+    MAC = "Memorial Athletic and Convocation Center",
+    MAN = "Manchester Hall", 
+    MCD = "McDowell Hall", 
+    MCG = "McGilvrey Hall",
+    MLH = "Merrill Hall", 
+    MOU = "Moulton Hall", 
+    MPH = "May Prentice House", 
+    MSB = "Mathematical Sciences Building",
+    MSC = "Schwartz Center",
+    MST = "Maintenance Storage Building",
+    NXH = "Nixson Hall", 
+    OBS = "Observatory", 
+    OLS = "Olson Hall",
+    ORH = "Oscar Ritchie Hall", 
+    PRN = "Prentice Hall", 
+    RHS = "Summit Street Warehouse", 
+    ROC = "Rockwell Hall",
+    RSO = "Research One Building", 
+    CHG = "Research Greenhouse", 
+    SAF = "Maintenance Building 55",
+    SFH = "Satterfield Hall",
+    SMH = "Smith Hall", 
+    SPP = "Summit Street Power Plant",
+    SPA = "Summit Street Power Plant West Wing",
+    SRB = "Science Research Building",
+    SRC = "Student Recreation and Wellness Center",
+    SRP = "Student Recreation Field Pavilion",
+    STB = "Stockdale Building",
+    STC = "Student Center",
+    STH = "Stewart Hall",
+    STO = "Stopher Hall",
+    SUB = "Substation",
+    TER = "Terrace Hall",
+    TLH = "Taylor Hall",
+    TRT = "Tri Towers Rotunda",
+    UFM = "University Facilities Management",
+    UPH = "University President's House",
+    VBF = "Varsity Baseball Clubhouse",
+    VER = "Verder Hall",
+    VNC = "Van Campen Hall",
+    WAC = "Williamson House",
+    WMH = "Williams Hall",
+    WRT = "Wright Hall",
+    WTH = "White Hall",
+    ZZR = "Starbucks Building",
+    ZZS = "Cutler Building"
 }
 
 export type CampusType = 'any' 
-                | 'storrs' 
-                | 'hartford' 
-                | 'stamford' 
-                | 'waterbury' 
-                | 'avery_point';
+                | 'kent' 
+                | 'east_liverpool' 
+                | 'trumbull' 
+                | 'tuscarawas' 
+                | 'stark'
+                | 'geauga'
+                | 'ashtabula'
+                | 'salem';
 
 export enum SearchParts {
     SECTIONS,
@@ -430,11 +446,15 @@ export type EnrollmentPayload = {
 }
 
 export enum RmpCampusIds {
-    STORRS = '1091',
-    HARTFORD = '5015',
-    STAMFORD = '4543',
-    WATERBURY = '4955',
-    AVERY_POINT = '4650'
+    KENT = 'U2Nob29sLTQ4Mg==',
+    EAST_LIVERPOOL = 'U2Nob29sLTIzMTA=',
+    TRUMBULL = 'U2Nob29sLTIzMTI=',
+    TUSCARAWAS = 'U2Nob29sLTIzMTM=',
+    STARK = 'U2Nob29sLTQyNjg=',
+    GEAUGA = 'U2Nob29sLTUyMDg=',
+    ASHTABULA = 'U2Nob29sLTIzMTA=',
+    SALEM = 'U2Nob29sLTIzMTE='
+
 }
 
 const DEFAULT_PREREQS = 'There are no prerequisites for this course.';
@@ -863,7 +883,7 @@ export const detectCampusBySection = (section: string): CampusType => {
     }
 }
 
-/**
+/**w
  * Returns whether or not the provided campus
  * is a valid member of the {@link CampusType} type.
  * 
@@ -871,12 +891,15 @@ export const detectCampusBySection = (section: string): CampusType => {
  */
 export const isCampusType = (input: string): input is CampusType => {
     let lower = input.toLowerCase();
-    return lower === 'any'
-        || lower === 'storrs'
-        || lower === 'hartford'
-        || lower === 'stamford'
-        || lower === 'waterbury'
-        || lower === 'avery_point'
+    return lower == 'any'
+        || lower == 'kent'
+        || lower == 'east_liverpool'
+        || lower == 'trumbull'
+        || lower == 'tuscuwaras'
+        || lower == 'stark'
+        || lower == 'guaga'
+        || lower == 'ashtabula'
+        || lower == 'salem';
 }
 
 /**
