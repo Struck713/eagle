@@ -39,11 +39,7 @@ const remoteLinks = [
 ];
 
 const remoteLinkNames: CampusType[] = [
-    'storrs',
-    'hartford',
-    'stamford',
-    'waterbury',
-    'avery_point'
+    'kent'
 ];
 
 enum CampusSorting {

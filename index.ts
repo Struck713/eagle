@@ -26,7 +26,7 @@ import tableparse from 'cheerio-tableparser';
 
 import { decode as decodeEntity } from 'html-entities';
 
-export const COURSE_IDENTIFIER = /^[a-zA-Z]{2,4}\d{3,4}(Q|E|W)*$/;
+export const COURSE_IDENTIFIER = /^[a-zA-Z]{2,4}\d{3,5}(Q|E|W)*$/;
 export const SECTION_IDENTIFIER = /^(H|Z|W|N)*\d{2,3}(L|D|X)*$/;
 
 export type CompleteCoursePayload = {
@@ -460,13 +460,46 @@ export enum RmpCampusIds {
 const DEFAULT_PREREQS = 'There are no prerequisites for this course.';
 const DEFAULT_DESC = 'There is no description provided for this course.';
 const DEFAULT_SEARCH_PARTS = [SearchParts.SECTIONS, SearchParts.PROFESSORS];
+const TERM = "202380";
 
-const getCatalogUrl = (prefix: string, number: string) => {
-    let num = parseInt(number.replace(/[^0-9]/g, ''));
-    if (num > 5000 && (prefix !== 'PHRX' || (prefix === 'PHRX' && num < 5199)))
-        return `https://gradcatalog.uconn.edu/course-descriptions/course/${prefix}/${number}/`;
-    return `https://catalog.uconn.edu/directory-of-courses/course/${prefix}/${number.length === 3 ? ' ' + number : number}/`;
-}
+const getCatalogUrl = async (prefix: string, number: string) => await axios
+    .post('https://keys.kent.edu/ePROD/bwlkffcs.P_AdvUnsecureGetCrse', 
+        qs.stringify({
+            term_in: TERM,
+            sel_subj: "dummy",
+            sel_day: "dummy",
+            sel_schd: "dummy",
+            sel_insm: "dummy",
+            sel_loc: "dummy",
+            sel_levl: "dummy",
+            sel_sess: "dummy",
+            sel_instr: "dummy",
+            sel_ptrm: "dummy",
+            sel_attr: "dummy",
+            sel_camp: "dummy"
+        }) + "&" + 
+        qs.stringify({
+            sel_subj: prefix,
+            sel_crse: number,
+            sel_title: "",
+            sel_camp: "%",
+            sel_insm: "%",
+            sel_from_cred: "",
+            sel_to_cred: "",
+            sel_loc: "%",
+            sel_levl: "%",
+            sel_ptrm: "%",
+            sel_instr: "%",
+            sel_attr: "%",
+            begin_hh: 0,
+            begin_mi: 0,
+            begin_ap: "a",
+            end_hh: 0,
+            end_mi: 0,
+            end_ap: "a",
+        })
+    ).then(res => res.data)
+    .catch(_ => null)
 
 /**
  * Attempts to retrieve data regarding
@@ -516,52 +549,28 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         }
     }
 
-    let target = getCatalogUrl(prefix, number);
-    let res = await axios
-        .get(target)
-        .then(res => res.data)
-        .catch(_ => null);
-
-    if (!res)
-        return null;
+    let res = await getCatalogUrl(prefix, number);
+    if (!res) return null;
 
     let $ = cheerio.load(res);
     tableparse($);
-        
-    let name = $('.single-course > h3:nth-child(2)')
-        .text()
-        .split(/\d{4}(?:Q|E|W)*\.\s/)[1];
-        
-    let grading = $('.grading-basis')
-        .text()
-        .trim()
-        .split('Grading Basis: ')[1] || 'Graded';
 
-    let credits = $('.credits')
-        .text()
-        .trim()
-        .split(' ')[0] || 'Unknown Credits';
+    let table = ($('table.datadisplaytable') as any).parsetable(false, false, true);
+    
+
+    let name = table[6][2];
+    let grading = "";
+    let credits = table[5][2];
 
     let prereqs = $('.prerequisites').text() || DEFAULT_PREREQS;
     if (prereqs && prereqs !== DEFAULT_PREREQS) {
-        let parts = prereqs
-            .trim()
-            .split(/Prerequisite(?:s){0,1}\:\s/);
-
-        prereqs = parts.length === 1 ? parts[0] : parts[1];
-        
-        if (prereqs.includes('None.'))
-            prereqs = DEFAULT_PREREQS;
-        
-        if (prereqs.includes('Recommended Preparation'))
-            prereqs = prereqs.split('Recommended Preparation')[0].trim()
     }
 
     let lastDataRaw = $('.last-refresh').text() || moment().format('DD-MMM-YY h.mm.ss.[123456] a').toUpperCase();
     if (lastDataRaw.includes('.')) lastDataRaw = replaceAll(lastDataRaw, '.', ':');
 
     let lastDataMarker = new Date(lastDataRaw.split(/:\d{6}/).join(''));
-    let description = $('.description').text() || DEFAULT_DESC;
+    let description = DEFAULT_DESC;
     if (!include.includes(SearchParts.SECTIONS)) return {
         name, grading, credits,
         prereqs, lastDataMarker,
@@ -571,96 +580,29 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
     };
 
     let sections: SectionData[] = [];
-    let data: string[][] = ($('.tablesorter') as any).parsetable();
-    if (!data[0]) return {
-        name, grading, credits,
-        prereqs, lastDataMarker,
-        description,
-        sections: [],
-        professors: []
-    };
-    
-    let grad = target.includes('gradcatalog');
-    let sectionCount = data[0].length - 1;
-
+    let sectionCount = 0;
     for (let i = 0; i < sectionCount + 1; i++) {
-        let internalData = cheerio.load(data[0][i].trim());
-        let term = data[1][i];
-        let campus = decodeEntity(data[grad ? 3 : 2][i]);
-        let mode = decodeEntity(data[grad ? 4 : 3][i]);
-        let instructor = data[grad ? 5 : 4][i]
-            .replace(/\&nbsp;/g, ' ')
-            .replace(/<br\s*\/*>/g, ' | ')
-            .split(' | ')
-            .map(ent => ent
-                .split(', ')
-                .reverse()
-                .join(' '))
-            .join(' & ');
-
-        let section = data[grad ? 6 : 5][i];
-        let session = data[grad ? 7 : 6][i].split('</a>')[0].split('>')[1];
-        let schedule = data[grad ? 8 : 7][i];
-        schedule = schedule.substring(0, schedule.length - 4);
-
-        let location: string | any = data[grad ? 10 : 8][i];
-        let locations: SectionLocationData[] = [];
-        if (location?.includes('classrooms.uconn.edu')) {
-            location = cheerio.load(location);
-            if (!location.html().includes('<br>')) {
-                let locationPayload: SectionLocationData = { name: location('a').text(), url: location('a').attr('href') };
-                locations.push(locationPayload);
-            } else {
-                location('a').each((_, el) => {
-                    let locationPayload: SectionLocationData = { name: $(el).text(), url: $(el).attr('href') };
-                    locations.push(locationPayload);
-                });
-            }
-        } else {
-            let locationPayload: SectionLocationData = { name: location };
-            locations.push(locationPayload);
-        }
-
-        let enrollment = data[9][i];
-        let enrollmentPayload = {} as any;
-        let spaces = enrollment.split('<')[0];
-        let current = spaces.split('/')[0];
-        let seats = spaces.split('/')[1];
-
-        enrollmentPayload.max = seats;
-        enrollmentPayload.current = current;
-        enrollmentPayload.full = current >= seats;
-        enrollmentPayload.waitlist = enrollment.includes('Waitlist Spaces:') 
-            ? enrollment.split('Waitlist Spaces: ')[1] 
-            : null;
-
-        let notes = data[grad ? 13 : 10][i];
         
-        let virtual: SectionData = {
-            internal: {
-                termCode: internalData('span.term-code').text(),
-                classNumber: internalData('span.class-number').text(),
-                classSection: internalData('span.class-section').text(),
-                sessionCode: internalData('span.session-code').text(),
-            },
-            term,
-            mode,
-            campus,
-            instructor,
-            section,
-            session,
-            schedule,
-            location: locations
-                .filter((ent, i) => locations.findIndex(ent2 => ent2.name === ent.name) === i)
-                .filter(ent => ent.name),
-            enrollment: enrollmentPayload,
-            notes
-        }
-
-        if (virtual.campus.toLowerCase() === 'off-campus')
-            continue;
-
-        sections.push(virtual);
+        // let virtual: SectionData = {
+        //     internal: {
+        //         termCode: internalData('span.term-code').text(),
+        //         classNumber: internalData('span.class-number').text(),
+        //         classSection: internalData('span.class-section').text(),
+        //         sessionCode: internalData('span.session-code').text(),
+        //     },
+        //     term,
+        //     mode,
+        //     campus,
+        //     instructor,
+        //     section,
+        //     session,
+        //     schedule,
+        //     location: locations
+        //         .filter((ent, i) => locations.findIndex(ent2 => ent2.name === ent.name) === i)
+        //         .filter(ent => ent.name),
+        //     enrollment: enrollmentPayload,
+        //     notes
+        // }
     }
 
     if (campus !== 'any') {
@@ -673,46 +615,6 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
     }
     
     let professors: ProfessorData[] = [];
-    sections = sections.slice(1, sections.length);
-
-    if (!include.includes(SearchParts.PROFESSORS)) return {
-        name, grading, credits,
-        prereqs, lastDataMarker,
-        description, sections,
-        professors: []
-    }
-
-    for (let section of sections) {
-        let profs = section.instructor.split(' & ');
-        for (let prof of profs) {        
-            if (professors.some(p => p.name === prof))
-                continue;
-            
-            let rmp = await searchRMP(prof);
-            let teaching = sections
-                .filter(section => section.instructor.split(' & ').includes(prof))
-                .sort((a, b) => a.section.localeCompare(b.section));
-    
-            prof = decodeEntity(replaceAll(prof, '<br>', ' '));
-    
-            if (!rmp) {
-                professors.push({
-                    name: prof,
-                    sections: teaching,
-                    rmpIds: []
-                });
-                continue;
-            }
-    
-            professors.push({
-                name: prof,
-                sections: teaching,
-                rmpIds: rmp.rmpIds
-            });
-        }
-    }
-
-    professors = professors.filter(prof => !!prof.name.trim())
 
     return {
         name, grading, credits,
@@ -869,18 +771,19 @@ export const getRmpReport = async (id: string): Promise<RateMyProfessorReport> =
  * @param section the section name
  */
 export const detectCampusBySection = (section: string): CampusType => {
-    switch (section.substring(0, 1).toLowerCase()) {
-        case 'h':
-            return 'hartford';
-        case 'z':
-            return 'stamford';
-        case 'w':
-            return 'waterbury';
-        case 'n':
-            return 'avery_point';
-        default:
-            return 'storrs';
-    }
+    // switch (section.substring(0, 2).toLowerCase()) {
+    //     case 'ke':
+    //         return 'kent';
+    //     case 'ea':
+    //         return 'stamford';
+    //     case 't':
+    //         return 'waterbury';
+    //     case 'n':
+    //         return 'avery_point';
+    //     default:
+    //         return 'storrs';
+    // }
+    return 'any';
 }
 
 /**w
@@ -915,34 +818,64 @@ export const isCampusType = (input: string): input is CampusType => {
  * @param section the requested section
  */
 export const getRawEnrollment = async (term: string, classNumber: string, section: string): Promise<EnrollmentPayload> => await axios
-    .post('https://catalog.uconn.edu/wp-content/plugins/uc-courses/soap.php', qs.stringify({
-        action: 'get_latest_enrollment',
-        term: term,
-        classNbr: classNumber,
-        sessionCode: 1,
-        classSection: section
-    }))
+    .post('https://keys.kent.edu/ePROD/bwlkffcs.P_AdvUnsecureGetCrse', 
+        qs.stringify({
+            sel_subj: "dummy",
+            sel_day: "dummy",
+            sel_schd: "dummy",
+            sel_insm: "dummy",
+            sel_loc: "dummy",
+            sel_levl: "dummy",
+            sel_sess: "dummy",
+            sel_instr: "dummy",
+            sel_ptrm: "dummy",
+            sel_attr: "dummy",
+            sel_camp: "dummy"
+        }) + "&" + 
+        qs.stringify({
+            term_in: term,
+            sel_subj: section,
+            sel_crse: classNumber,
+            sel_title: "",
+            sel_camp: "%",
+            sel_insm: "%",
+            sel_from_cred: "",
+            sel_to_cred: "",
+            sel_loc: "",
+            sel_levl: "%",
+            sel_ptrm: "%",
+            sel_instr: "%",
+            sel_attr: "%",
+            begin_hh: 0,
+            begin_mi: 0,
+            begin_ap: "a",
+            end_hh: 0,
+            end_mi: 0,
+            end_ap: "a",
+        })
+    )
     .then(res => res.data)
     .then(async res => {
-        if (!res.success)
-            throw new Error('Request failed');
+        // if (!res.success)
+        //     throw new Error('Request failed');
 
-        let seats: string[] = res.data.split('/');
-        let available = parseInt(seats[0]);
-        let total = parseInt(seats[1]);
-        let overfill = available >= total;
+        // let seats: string[] = res.data.split('/');
+        // let available = parseInt(seats[0]);
+        // let total = parseInt(seats[1]);
+        // let overfill = available >= total;
 
-        return {
-            course: {
-                term,
-                section,
-                classNumber
-            },
-            available,
-            total,
-            overfill,
-            percent: Number((available / total).toFixed(2))
-        }
+        // return {
+        //     course: {
+        //         term,
+        //         section,
+        //         classNumber
+        //     },
+        //     available,
+        //     total,
+        //     overfill,
+        //     percent: Number((available / total).toFixed(2))
+        // }
+        console.log(res);
     })
     .catch(_ => null);
 
