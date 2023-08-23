@@ -29,6 +29,7 @@ import { decode as decodeEntity } from 'html-entities';
 export const COURSE_IDENTIFIER = /^[a-zA-Z]{2,4}\d{3,5}(Q|E|W)*$/;
 export const SECTION_IDENTIFIER = /^(H|Z|W|N)*\d{2,3}(L|D|X)*$/;
 export const COURSE_SEPARATOR = /-{342}/
+export const SCHOOL_RMP_ID = "U2Nob29sLTQ4Mg==";
 
 export type CompleteCoursePayload = {
     name: string;
@@ -763,7 +764,7 @@ export const searchRMP = async (instructor: string): Promise<RateMyProfessorResp
             query: `
                 query NewSearch {
                     newSearch {
-                        teachers(query: {text: "${instructor}", schoolID: "U2Nob29sLTQ4Mg=="}) {
+                        teachers(query: {text: "${instructor}", schoolID: "${SCHOOL_RMP_ID}"}) {
                             resultCount
                             edges {
                                 node {
