@@ -4,9 +4,11 @@
 ![vuln badge](https://img.shields.io/snyk/vulnerabilities/github/Struck713/eagle)
 ![codeql badge](https://img.shields.io/github/workflow/status/Struck713/eagle/CodeQL?label=codeql%20analysis)
 
-Eagle is a TypeScript library that contains several useful utilities for interfacing with UConn services.
+Eagle is a TypeScript library that contains several useful utilities for interfacing with Kent State services.
 
-## Installation
+I will eventually include some actual information in this README.
+
+<!-- ## Installation
 
 Use npm to install Husky.
 
@@ -18,7 +20,7 @@ Since Husky is currently hosted on GitHub packages, you will need to make a ``.n
 
 ```env
 @ilefa:registry=https://npm.pkg.github.com
-```
+``` 
 
 ## Usage
 
@@ -178,7 +180,7 @@ Regardless of how this data is queried, it will return a payload in the form of 
 
 6. From here, expand the top ``<td>`` element, and you will be able to see the course data. It should look like this: 
 
-![hidden course data](.assets/hidden-course-data.png)
+![hidden course data](.assets/hidden-course-data.png) -->
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
