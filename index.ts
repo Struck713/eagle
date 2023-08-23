@@ -28,6 +28,7 @@ import { decode as decodeEntity } from 'html-entities';
 
 export const COURSE_IDENTIFIER = /^[a-zA-Z]{2,4}\d{3,5}(Q|E|W)*$/;
 export const SECTION_IDENTIFIER = /^(H|Z|W|N)*\d{2,3}(L|D|X)*$/;
+export const COURSE_SEPARATOR = /-{342}/
 
 export type CompleteCoursePayload = {
     name: string;
@@ -462,7 +463,12 @@ const DEFAULT_DESC = 'There is no description provided for this course.';
 const DEFAULT_SEARCH_PARTS = [SearchParts.SECTIONS, SearchParts.PROFESSORS];
 const TERM = "202380";
 
-const getCatalogUrl = async (prefix: string, number: string) => await axios
+const getCatalogUrl = async (prefix: string, number: string) => await axios.
+    get(`https://keys.kent.edu/ePROD/bwckctlg.p_display_courses?term_in=202380&one_subj=${prefix}&sel_crse_strt=${number}&sel_crse_end=${number}&sel_subj=&sel_levl=&sel_schd=&sel_coll=&sel_divs=&sel_dept=&sel_attr=`)
+    .then(res => res.data)
+    .catch(_ => null);
+
+const getCatalogSections = async (prefix: string, number: string) => await axios
     .post('https://keys.kent.edu/ePROD/bwlkffcs.P_AdvUnsecureGetCrse', 
         qs.stringify({
             term_in: TERM,
@@ -499,7 +505,7 @@ const getCatalogUrl = async (prefix: string, number: string) => await axios
             end_ap: "a",
         })
     ).then(res => res.data)
-    .catch(_ => null)
+    .catch(_ => null);
 
 /**
  * Attempts to retrieve data regarding
@@ -524,8 +530,7 @@ const getCatalogUrl = async (prefix: string, number: string) => await axios
  * @param include overrides what parts are included in the CoursePayload, omit parameter to include all parts
  */
 export const searchCourse = async (identifier: string, campus: CampusType = 'any', useMappings: boolean = false, include: SearchParts[] = DEFAULT_SEARCH_PARTS): Promise<CoursePayload> => {
-    if (!COURSE_IDENTIFIER.test(identifier))
-        return null;
+    if (!COURSE_IDENTIFIER.test(identifier)) return null;
     
     let prefix = identifier.split(/[0-9]/)[0].toUpperCase();
     let number = identifier.split(/[a-zA-Z]{2,4}/)[1];
@@ -549,60 +554,106 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         }
     }
 
-    let res = await getCatalogUrl(prefix, number);
-    if (!res) return null;
+    let catalogData = await getCatalogUrl(prefix, number);
+    if (!catalogData) return null;
 
-    let $ = cheerio.load(res);
-    tableparse($);
-
-    let table = ($('table.datadisplaytable') as any).parsetable(false, false, true);
+    let $ = cheerio.load(catalogData);
     
+    let titleRaw = $(".nttitle").text().split(" - ");
+    let name = titleRaw[1];
 
-    let name = table[6][2];
-    let grading = "";
-    let credits = table[5][2];
+    let descriptionRaw = $(".ntdefault").text().split(/\n{1,}/);
+    console.log(descriptionRaw);
+
+    let grading = GradingTypeNames.GRADED;
+    let credits = (descriptionRaw[2] || "0").trim();
+    let lastDataMarker = new Date();
 
     let prereqs = $('.prerequisites').text() || DEFAULT_PREREQS;
     if (prereqs && prereqs !== DEFAULT_PREREQS) {
     }
 
-    let lastDataRaw = $('.last-refresh').text() || moment().format('DD-MMM-YY h.mm.ss.[123456] a').toUpperCase();
-    if (lastDataRaw.includes('.')) lastDataRaw = replaceAll(lastDataRaw, '.', ':');
 
-    let lastDataMarker = new Date(lastDataRaw.split(/:\d{6}/).join(''));
-    let description = DEFAULT_DESC;
-    if (!include.includes(SearchParts.SECTIONS)) return {
-        name, grading, credits,
-        prereqs, lastDataMarker,
-        description,
-        sections: [],
-        professors: []
-    };
+    let description = descriptionRaw[1] || DEFAULT_DESC;
+    if (!include.includes(SearchParts.SECTIONS))
+        return {
+            name, grading, credits,
+            prereqs, lastDataMarker,
+            description,
+            sections: [],
+            professors: []
+        };
 
+    
+    let sectionDataTable = await getCatalogSections(prefix, number);
+    let $section = cheerio.load(sectionDataTable);
+    tableparse($section);
+
+    let table = ($section('table.datadisplaytable') as any).parsetable(true, false, true);
     let sections: SectionData[] = [];
-    let sectionCount = 0;
-    for (let i = 0; i < sectionCount + 1; i++) {
-        
-        // let virtual: SectionData = {
-        //     internal: {
-        //         termCode: internalData('span.term-code').text(),
-        //         classNumber: internalData('span.class-number').text(),
-        //         classSection: internalData('span.class-section').text(),
-        //         sessionCode: internalData('span.session-code').text(),
-        //     },
-        //     term,
-        //     mode,
-        //     campus,
-        //     instructor,
-        //     section,
-        //     session,
-        //     schedule,
-        //     location: locations
-        //         .filter((ent, i) => locations.findIndex(ent2 => ent2.name === ent.name) === i)
-        //         .filter(ent => ent.name),
-        //     enrollment: enrollmentPayload,
-        //     notes
-        // }
+
+    let sectionCount = table[0].filter(x => x.match(COURSE_SEPARATOR)).length;
+    let lastSectionSeparator = 1;
+    for (let i = 0; i < sectionCount; i++) {
+        /**
+         * 0: status
+         * 1: text book
+         * 2: fees
+         * 3: CRN
+         * 4: identifier - course # - section #
+         * 5: credits
+         * 6: title
+         * 7: attributes
+         * 8: enrollment
+         * 9: remain open
+         * 10: lecture type
+         * 11: meeting dates
+         * 12: days (week)
+         * 13: times
+         * 14: method of instruction
+         * 15: location
+         * 16: instructor
+         * 17: need special approval?
+         * 18: prerequisites
+         * 19: registration deadlines
+         * 20: campus
+         * 21: other
+         */
+        let tableIndex = lastSectionSeparator + 1;
+        let campus = table[20][tableIndex];
+        let instructor = table[16][tableIndex];
+        let schedule = table[13][tableIndex];
+        let enrollment = Number(table[8][tableIndex]);
+        let remainOpen = Number(table[9][tableIndex]);
+
+        let identifierRaw = table[4][tableIndex].split(" - ");
+        let sessionCode = table[3][tableIndex];
+        let classNumber = identifierRaw[0] + identifierRaw[1];
+        let classSection = identifierRaw[2];
+
+        sections.push({
+            mode: "",
+            campus,
+            enrollment: {
+                current: enrollment,
+                max: enrollment + remainOpen,
+                full: remainOpen == 0
+            },
+            instructor,
+            notes: table[21][tableIndex],
+            schedule,
+            section: classSection,
+            session: sessionCode,
+            term: "",
+            internal: {
+                classNumber,
+                classSection,
+                sessionCode,
+                termCode: ""
+            },
+            location: []
+        });
+        lastSectionSeparator = table[0].findIndex((e, i) => e.match(COURSE_SEPARATOR) && i > lastSectionSeparator);
     }
 
     if (campus !== 'any') {
