@@ -562,19 +562,17 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
     let titleRaw = $(".nttitle").text().split(" - ");
     let name = titleRaw[1];
 
-    let descriptionRaw = $(".ntdefault").text().split(/\n{1,}/);
-    console.log(descriptionRaw);
-
+    let classDataRaw = $(".ntdefault").text().split(/\n{1,}/);
     let grading = GradingTypeNames.GRADED;
-    let credits = (descriptionRaw[2] || "0").trim();
+    let credits = (classDataRaw[2] || "0").trim();
     let lastDataMarker = new Date();
 
-    let prereqs = $('.prerequisites').text() || DEFAULT_PREREQS;
-    if (prereqs && prereqs !== DEFAULT_PREREQS) {
-    }
+    let descriptionRaw = classDataRaw[1].split(" Prerequisite: ");
+    let description = descriptionRaw[0] || DEFAULT_DESC;
 
+    let prereqs = descriptionRaw[1] || DEFAULT_PREREQS;
+    if (prereqs.includes('None.')) prereqs = DEFAULT_PREREQS;
 
-    let description = descriptionRaw[1] || DEFAULT_DESC;
     if (!include.includes(SearchParts.SECTIONS))
         return {
             name, grading, credits,
@@ -621,8 +619,11 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
          */
         let tableIndex = lastSectionSeparator + 1;
         let campus = table[20][tableIndex];
-        let instructor = table[16][tableIndex];
-        let schedule = table[13][tableIndex];
+        let instructor = table[16][tableIndex]
+            .replace(/\(.+\)/, "")
+            .replace(/\s{2,}/g, " ")
+            .trim();
+        let schedule = table[12][tableIndex] + " " + table[13][tableIndex];
         let enrollment = Number(table[8][tableIndex]);
         let remainOpen = Number(table[9][tableIndex]);
 
@@ -665,7 +666,32 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         sectionCount = sections.length;
     }
     
+    if (!include.includes(SearchParts.PROFESSORS))
+        return {
+            name, grading, credits,
+            prereqs, lastDataMarker,
+            description, sections,
+            professors: []
+        }
+
     let professors: ProfessorData[] = [];
+    for (let section of sections) {
+        
+        let prof = section.instructor;
+        if (professors.some(p => p.name === prof))
+            continue;
+    
+        let rmp = await searchRMP(prof);
+        let teaching = sections
+                .filter(section => section.instructor === prof)
+                .sort((a, b) => a.section.localeCompare(b.section));
+
+        professors.push({
+            name: section.instructor,
+            sections: teaching,
+            rmpIds: rmp ? rmp.rmpIds : []
+        });
+    }
 
     return {
         name, grading, credits,
@@ -732,7 +758,7 @@ export const searchRMP = async (instructor: string): Promise<RateMyProfessorResp
     if (!instructor.trim() || instructor.split(',').length)
         return null;
 
-    let $: cheerio.Root = await axios.get(`https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=University+of+Connecticut=&query=${instructor.replace(' ', '+')}`)
+    let $: cheerio.Root = await axios.get(`https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=Kent+State+University=&query=${instructor.replace(' ', '+')}`)
         .then(res => res.data)
         .then(data => cheerio.load(data))
         .catch(_ => null);
@@ -929,58 +955,6 @@ export const getRawEnrollment = async (term: string, classNumber: string, sectio
         console.log(res);
     })
     .catch(_ => null);
-
-/**
- * Attempts to lookup service statuses from
- * the [UConn IT Status page](https://itstatus.uconn.edu)
- * and return them as UConnServiceReport objects.
- * 
- * @param services [optional] the services to lookup
- */
-export const getServiceStatus = async (...include: UConnService[]): Promise<UConnServiceReport[]> => {
-    let data = await axios
-        .get('https://itstatus.uconn.edu')
-        .then(res => res.data)
-        .catch(_ => null);
-
-    if (!data)
-        return null;
-
-    if (include.includes(UConnService.UNKNOWN))
-        include = include.filter(srv => srv !== UConnService.UNKNOWN);
-
-    let $ = cheerio.load(data);
-    let services: UConnServiceReport[] = [];
-
-    $('.list-group > li').each(i => {
-        let selector = `li.list-group-item:nth-child(${i + 1})`;
-        let name = $(`${selector} > p.box-1200`).text();
-        let status = determineStatusFromHTML($(selector).html());
-
-        services.push({
-            service: UConnService[replaceAll(name.toUpperCase(), ' ', '_')] || UConnService.UNKNOWN,
-            status: status,
-            time: Date.now()
-        });
-    });
-
-    if (include && include.length)
-        services = services.filter(srv => include.includes(srv.service));
-
-    if (services.some(srv => srv.service === UConnService.UNKNOWN))
-        services = services.filter(srv => srv.service !== UConnService.UNKNOWN);
-
-    return services;
-}
-
-const determineStatusFromHTML = (listItemSelector: string) => {
-    if (listItemSelector.includes('text-success')) return UConnServiceStatus.OPERATIONAL;
-    if (listItemSelector.includes('text-info')) return UConnServiceStatus.REPORTING;
-    if (listItemSelector.includes('text-warning')) return UConnServiceStatus.DEGRADED;
-    if (listItemSelector.includes('text-danger')) return UConnServiceStatus.OUTAGE;
-
-    return UConnServiceStatus.UNKNOWN;
-}
 
 const replaceAll = (input: string, search: string, replace: string) => {
     let copy = String(input);
