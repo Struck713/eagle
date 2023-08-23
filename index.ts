@@ -758,39 +758,36 @@ export const searchRMP = async (instructor: string): Promise<RateMyProfessorResp
     if (!instructor.trim() || instructor.split(',').length)
         return null;
 
-    let $: cheerio.Root = await axios.get(`https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=Kent+State+University=&query=${instructor.replace(' ', '+')}`)
-        .then(res => res.data)
-        .then(data => cheerio.load(data))
-        .catch(_ => null);
+    let res = await axios.post(`https://www.ratemyprofessors.com/graphql`, 
+        {
+            query: `
+                query NewSearch {
+                    newSearch {
+                        teachers(query: {text: "${instructor}", schoolID: "U2Nob29sLTQ4Mg=="}) {
+                            resultCount
+                            edges {
+                                node {
+                                    id
+                                }
+                            }
+                        }
+                    }
+                }
+            `
+        },
+        {
+            headers: {
+                "Authorization": "Basic dGVzdDp0ZXN0"
+            }
+        }
+    ).then(res => res.data).catch(_ => null);
 
-    instructor = decodeEntity(replaceAll(instructor, '<br>', ' '));
-
-    if (!$) return {
+    if (!res) return {
         name: instructor,
         rmpIds: []
     }
 
-    let rmp: string[] = [];
-
-    $('.TeacherCard__StyledTeacherCard-syjs0d-0').each((i: number) => {
-        let school = $(`.TeacherCard__StyledTeacherCard-syjs0d-0:nth-child(${i + 1}) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2)`).text();
-        if (!school.includes('University of Connecticut')) {
-            return;
-        }
-
-        let name = $(`.CardName__StyledCardName-sc-1gyrgim-0:nth-child(${i + 1})`).text();
-        let s1 = instructor.toLowerCase().split(' ');
-        let s2 = name.toLowerCase().split(' ');
-        let sim = similarity.compareTwoStrings(s1.join(' '), s2.join(' '));
-
-        if (!s1.every(ent => s2.includes(ent)))
-            if (sim < 0.7) return;
-
-        rmp.push($(`.TeacherCard__StyledTeacherCard-syjs0d-0:nth-child(${i + 1})`)
-            .attr('href')
-            .split('tid=')[1]);
-    });
-
+    let rmp: string[] = res.data.newSearch.teachers.edges.map(e => e.node.id);
     return {
         name: instructor,
         rmpIds: rmp
@@ -805,35 +802,44 @@ export const searchRMP = async (instructor: string): Promise<RateMyProfessorResp
  * @param id the instructor's ratemyprofessors' id
  */
 export const getRmpReport = async (id: string): Promise<RateMyProfessorReport> => {
-    let $: cheerio.Root = await axios.get(`https://www.ratemyprofessors.com/ShowRatings.jsp?tid=${id}`)
-        .then(res => res.data)
-        .then(data => cheerio.load(data))
-        .catch(_ => null);
+    let res = await axios.post(`https://www.ratemyprofessors.com/graphql`, 
+        {
+            query: `
+                query Node {
+                    node(id: "${id}") {
+                        ... on Teacher {
+                            avgRating
+                            avgDifficultyRounded
+                            wouldTakeAgainPercent
+                            numRatings
+                            teacherRatingTags {
+                                tagName
+                            }
+                            firstName
+                            lastName
+                        }
+                    }
+                }
+            `
+        },
+        {
+            headers: {
+                "Authorization": "Basic dGVzdDp0ZXN0"
+            }
+        }
+    ).then(res => res.data).catch(_ => null);
 
-    if (!$) return null;
+    if (!res) return null;
 
-    let name = $('.NameTitle__Name-dowf0z-0 > span:nth-child(1)').text().trim() + ' ' + $('.NameTitle__LastNameWrapper-dowf0z-2').text().trim();
-    let average = parseFloat($('.RatingValue__Numerator-qw8sqy-2').text());
-    let ratings = parseInt($('.RatingValue__NumRatings-qw8sqy-0 > div:nth-child(1) > a:nth-child(1)').text().split(' ')[0]);
-    let takeAgain = NaN;
-    let difficulty = NaN;
-    let tags = [];
-
-    $('.FeedbackItem__StyledFeedbackItem-uof32n-0').each((i: number) => {
-        let ent = $(`div.FeedbackItem__StyledFeedbackItem-uof32n-0:nth-child(${i + 1})`);
-        if (i == 0) takeAgain = parseFloat(ent.text().split('%')[0]);
-        if (i == 1) difficulty = parseFloat(ent.text());
-    })
-    
-    $('.Tag-bs9vf4-0').each((i: number) => {
-        tags.push($(`.TeacherTags__TagsContainer-sc-16vmh1y-0 > span:nth-child(${i + 1})`).text());
-    });
-
+    let node = res.data.node;
     return {
-        name, average, ratings,
-        takeAgain, difficulty,
-        tags: tags.filter(tag => !!tag)
-    }
+        name: node.firstName + " " + node.lastName,
+        average: node.avgRating,
+        difficulty: node.avgDifficultyRounded,
+        ratings: node.numRatings,
+        takeAgain: node.wouldTakeAgainPercent,
+        tags: node.teacherRatingTags.map(ent => ent.tagName)
+    };
 }
 
 /**
