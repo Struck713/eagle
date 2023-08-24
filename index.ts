@@ -637,9 +637,9 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         //let sessionCode = identifierRaw[0] + identifierRaw[1];
         let classSection = identifierRaw[2];
 
-        // let buildingRaw = /([a-zA-Z\s]+)\s(\d{0,5})/.exec(table[15][tableIndex]);
-        // let building = detectBuildingCode(buildingRaw[1]);
-        // let room = buildingRaw[2];
+        let buildingRaw = /([a-zA-Z\s]+)\s(\d{0,5})/.exec(table[15][tableIndex]);
+        let building = detectBuildingCode(buildingRaw[1]);
+        let room = buildingRaw[2];
 
         sections.push({
             mode: table[14][tableIndex],
@@ -659,11 +659,11 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
                 classNumber,
                 classSection,
                 sessionCode: "1", // always 1
-                termCode: "1233"
+                termCode: TERM
             },
             location: [
                 {
-                    name: table[15][tableIndex]
+                    name: `${building} ${room}`,
                 }
             ]
         });
@@ -878,13 +878,12 @@ export const detectNameByAbbreviation = (abbreviation: string): string => {
     return 'Unknown';
 }
 
-// export const detectBuildingCode = (name: string): BuildingCode => {
-//     for (let [ key, value ] of Object.entries(BuildingCode)) {
-//         console.log(key, value);
-//         if (key === name)
-//             return value;
-//     }
-// }
+export const detectBuildingCode = (name: string): string => {
+    for (let key of Object.keys(BuildingCode)) {
+        if (BuildingCode[key] === name)
+            return key;
+    }
+}
 
 /**w
  * Returns whether or not the provided campus
