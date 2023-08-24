@@ -27,9 +27,11 @@ import tableparse from 'cheerio-tableparser';
 import { decode as decodeEntity } from 'html-entities';
 
 export const COURSE_IDENTIFIER = /^[a-zA-Z]{2,4}\d{3,5}(Q|E|W)*$/;
-export const SECTION_IDENTIFIER = /^(H|Z|W|N)*\d{2,3}(L|D|X)*$/;
 export const COURSE_SEPARATOR = /-{342}/
+export const SECTION_IDENTIFIER = /^(H|Z|W|N)*\d{2,3}(L|D|X)*$/;
 export const SCHOOL_RMP_ID = "U2Nob29sLTQ4Mg==";
+
+export const SEASONS = [ "Spring", "Summer", "Fall", "Winter" ]
 
 export type CompleteCoursePayload = {
     name: string;
@@ -604,13 +606,17 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         let enrollment = Number(table[8][tableIndex]);
         let remainOpen = Number(table[9][tableIndex]);
 
+        let termDates = table[11][tableIndex].split("-");
+        let termMoment = moment(new Date(termDates[0]));
+        let term = SEASONS[termMoment.get("quarter") - 1] + " " + termMoment.get("year");
+
         let identifierRaw = table[4][tableIndex].split(" - ");
         let classNumber = table[3][tableIndex];
         //let sessionCode = identifierRaw[0] + identifierRaw[1];
         let classSection = identifierRaw[2];
 
         sections.push({
-            mode: table[14][tableIndex], // In Person, Online, Hybrid/Blended, Hybrid/Reduced
+            mode: table[14][tableIndex],
             campus,
             enrollment: {
                 current: enrollment,
@@ -622,7 +628,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
             schedule,
             section: classSection,
             session: "REG", // REG unless it's a Winter session
-            term: "Fall 2023",
+            term,
             internal: {
                 classNumber,
                 classSection,
