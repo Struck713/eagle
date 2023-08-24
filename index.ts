@@ -627,7 +627,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
             notes: table[21][tableIndex],
             schedule,
             section: classSection,
-            session: "REG", // REG unless it's a Winter session
+            session: "Reg", // REG unless it's a Winter session
             term,
             internal: {
                 classNumber,
