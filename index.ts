@@ -565,7 +565,9 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
 
     let classDataRaw = $(".ntdefault").text().split(/\n{1,}/);
     let grading = GradingTypeNames.GRADED;
-    let credits = (classDataRaw[2] || "0").trim();
+    let credits = (classDataRaw[2] || "0")
+        .replace(/[a-zA-Z]+/g, "")
+        .trim();
     let lastDataMarker = new Date();
 
     let descriptionRaw = classDataRaw[1].split(" Prerequisite: ");
