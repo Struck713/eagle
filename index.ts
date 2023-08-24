@@ -663,17 +663,17 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
 
     let professors: ProfessorData[] = [];
     for (let section of sections) {
-        let profs = section.instructor.split(" , ");
+        let profs = section.instructor.split(" , "); // /\s{0,},\s{0,}/
         for (let prof of profs) {
             if (professors.some(p => p.name === prof)) continue;
     
             let rmp = await searchRMP(prof);
             let teaching = sections
-                    .filter(section => section.instructor === prof)
+                    .filter(section => section.instructor.split(" , ").includes(prof))
                     .sort((a, b) => a.section.localeCompare(b.section));
 
             professors.push({
-                name: section.instructor,
+                name: prof,
                 sections: teaching,
                 rmpIds: rmp ? rmp.rmpIds : []
             });
