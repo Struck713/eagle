@@ -635,7 +635,11 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
                 sessionCode: "1", // always 1
                 termCode: "1233"
             },
-            location: []
+            location: [
+                {
+                    name: table[15][tableIndex]
+                }
+            ]
         });
         lastSectionSeparator = table[0].findIndex((e, i) => e.match(COURSE_SEPARATOR) && i > lastSectionSeparator);
     }
