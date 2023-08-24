@@ -917,65 +917,29 @@ export const isCampusType = (input: string): input is CampusType => {
  * @param classNumber the class number for the requested class
  * @param section the requested section
  */
-export const getRawEnrollment = async (term: string, classNumber: string, section: string): Promise<EnrollmentPayload> => await axios
-    .post('https://keys.kent.edu/ePROD/bwlkffcs.P_AdvUnsecureGetCrse', 
-        qs.stringify({
-            sel_subj: "dummy",
-            sel_day: "dummy",
-            sel_schd: "dummy",
-            sel_insm: "dummy",
-            sel_loc: "dummy",
-            sel_levl: "dummy",
-            sel_sess: "dummy",
-            sel_instr: "dummy",
-            sel_ptrm: "dummy",
-            sel_attr: "dummy",
-            sel_camp: "dummy"
-        }) + "&" + 
-        qs.stringify({
-            term_in: term,
-            sel_subj: section,
-            sel_crse: classNumber,
-            sel_title: "",
-            sel_camp: "%",
-            sel_insm: "%",
-            sel_from_cred: "",
-            sel_to_cred: "",
-            sel_loc: "",
-            sel_levl: "%",
-            sel_ptrm: "%",
-            sel_instr: "%",
-            sel_attr: "%",
-            begin_hh: 0,
-            begin_mi: 0,
-            begin_ap: "a",
-            end_hh: 0,
-            end_mi: 0,
-            end_ap: "a",
-        })
-    )
+export const getRawEnrollment = async (term: string, classNumber: string, section?: string): Promise<EnrollmentPayload> => await axios
+    .get(`https://keys.kent.edu/ePROD/bwckschd.p_disp_detail_sched?term_in=${term}&crn_in=${classNumber}&classes=Y`)
     .then(res => res.data)
     .then(async res => {
-        // if (!res.success)
-        //     throw new Error('Request failed');
+        let $ = cheerio.load(res);
+        tableparse($);
 
-        // let seats: string[] = res.data.split('/');
-        // let available = parseInt(seats[0]);
-        // let total = parseInt(seats[1]);
-        // let overfill = available >= total;
+        let table = ($('table[summary="This layout table is used to present the seating numbers."]') as any).parsetable(true, false, true);
+        let available = parseInt(table[3][1]);
+        let total = parseInt(table[1][1]);
+        let overfill = available >= total;
 
-        // return {
-        //     course: {
-        //         term,
-        //         section,
-        //         classNumber
-        //     },
-        //     available,
-        //     total,
-        //     overfill,
-        //     percent: Number((available / total).toFixed(2))
-        // }
-        console.log(res);
+        return {
+            course: {
+                term,
+                section,
+                classNumber
+            },
+            available,
+            total,
+            overfill,
+            percent: Number((available / total).toFixed(2))
+        }
     })
     .catch(_ => null);
 
