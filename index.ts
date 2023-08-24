@@ -145,32 +145,6 @@ export type RateMyProfessorReport = {
     tags: string[];
 }
 
-export enum UConnService {
-    AURORA = 'Aurora',
-    EMAIL = 'Email',
-    HUSKYCT = 'HuskyCT',
-    KFS = 'KFS',
-    NETID = 'NetID',
-    NETWORK = 'Network',
-    STUDENT_ADMIN = 'Student Admin',
-    WEBEX = 'Webex',
-    UNKNOWN = 'Unknown'
-}
-
-export enum UConnServiceStatus {
-    OPERATIONAL = 'Operational',
-    REPORTING = 'Reporting',
-    DEGRADED = 'Degraded',
-    OUTAGE = 'Outage',
-    UNKNOWN = 'Unknown'
-}
-
-export type UConnServiceReport = {
-    service: UConnService;
-    status: UConnServiceStatus;
-    time: number;
-}
-
 export type Classroom = {
     name: string;
     building: {
@@ -621,7 +595,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
          * 21: other
          */
         let tableIndex = lastSectionSeparator + 1;
-        let campus = detectCampusByAbbreviation(table[20][tableIndex]);
+        let campus = detectNameByAbbreviation(table[20][tableIndex]);
         let instructor = table[16][tableIndex]
             .replace(/\(.+\)/, "")
             .replace(/\s{2,}/g, " ")
@@ -679,21 +653,21 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
 
     let professors: ProfessorData[] = [];
     for (let section of sections) {
-        
-        let prof = section.instructor;
-        if (professors.some(p => p.name === prof))
-            continue;
+        let profs = section.instructor.split(" , ");
+        for (let prof of profs) {
+            if (professors.some(p => p.name === prof)) continue;
     
-        let rmp = await searchRMP(prof);
-        let teaching = sections
-                .filter(section => section.instructor === prof)
-                .sort((a, b) => a.section.localeCompare(b.section));
+            let rmp = await searchRMP(prof);
+            let teaching = sections
+                    .filter(section => section.instructor === prof)
+                    .sort((a, b) => a.section.localeCompare(b.section));
 
-        professors.push({
-            name: section.instructor,
-            sections: teaching,
-            rmpIds: rmp ? rmp.rmpIds : []
-        });
+            professors.push({
+                name: section.instructor,
+                sections: teaching,
+                rmpIds: rmp ? rmp.rmpIds : []
+            });
+        }
     }
 
     return {
@@ -856,16 +830,16 @@ export const getRmpReport = async (id: string): Promise<RateMyProfessorReport> =
  * 
  * @param section the section name
  */
-export const detectCampusByAbbreviation = (abbreviation: string): CampusType => {
-    if (abbreviation === 'KC') return 'kent';
-    if (abbreviation === 'EC') return 'east_liverpool';
-    if (abbreviation === 'TR') return 'trumbull';
-    if (abbreviation === 'TU') return 'tuscarawas';
-    if (abbreviation === 'ST') return 'stark';
-    if (abbreviation === 'GC') return 'geauga';
-    if (abbreviation === 'AC') return 'ashtabula';
-    if (abbreviation === 'SA') return 'salem';
-    return 'any';
+export const detectNameByAbbreviation = (abbreviation: string): string => {
+    if (abbreviation === 'KC') return 'Kent';
+    if (abbreviation === 'EC') return 'East Liverpool';
+    if (abbreviation === 'TR') return 'Trumbull';
+    if (abbreviation === 'TU') return 'Tuscarawas';
+    if (abbreviation === 'ST') return 'Stark';
+    if (abbreviation === 'GC') return 'Geauga';
+    if (abbreviation === 'AC') return 'Ashtabula';
+    if (abbreviation === 'SA') return 'Salem';
+    return 'Unknown';
 }
 
 /**w
@@ -880,7 +854,7 @@ export const isCampusType = (input: string): input is CampusType => {
         || lower == 'kent'
         || lower == 'east_liverpool'
         || lower == 'trumbull'
-        || lower == 'tuscuwaras'
+        || lower == 'tuscarawas'
         || lower == 'stark'
         || lower == 'guaga'
         || lower == 'ashtabula'
