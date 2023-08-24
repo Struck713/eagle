@@ -55,19 +55,39 @@ export type CourseAttributes = {
 }
 
 export enum ContentArea {
-    CA1 = 'CA1',
-    CA2 = 'CA2',
-    CA3 = 'CA3',
-    CA4 = 'CA4',
-    CA4INT = 'CA4INT'
+    BLOS = "BLOS",
+    DIVD = "DIVD",
+    DIVG = "DIVG",
+    EMBA = "EMBA",
+    ELR = "ELR",
+    HONR = "HONR",
+    KADL = "KADL",
+    KBS = "KBS",
+    KCMP = "KCMP",
+    KLAB = "KLAB",
+    KFA = "KFA",
+    KHUM = "KHUM",
+    KMCR = "KMCR",
+    KSS = "KSS",
+    WIC = "WIC"
 }
 
 export enum ContentAreaNames {
-    CA1 = 'Arts and Humanities',
-    CA2 = 'Social Sciences',
-    CA3 = 'Science and Technology',
-    CA4 = 'Diversity and Multiculturalism',
-    CA4INT = 'Diversity and Multiculturalism (International)'
+    BLOS = "Blossom Summer",
+    DIVD = "Diversity Domestic",
+    DIVG = "Diversity Global",
+    EMBA = "Executive MBA",
+    ELR = "Experiential Learning Requirement",
+    HONR = "Honors Course",
+    KADL = "Kent Core Additional",
+    KBS = "Kent Core Basic Sciences",
+    KCMP = "Kent Core Composition",
+    KLAB = "Kent Core-Basic Sciences Lab",
+    KFA = "Kent Core-Fine Arts",
+    KHUM = "Kent Core-Humanities",
+    KMCR = "Kent Core-Math/Critical Reason",
+    KSS = "Kent Core-Social Sciences",
+    WIC = "Writing Intensive Course",
 }
 
 export enum GradingTypeNames {
@@ -537,7 +557,9 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
     let $ = cheerio.load(catalogData);
     
     let titleRaw = $(".nttitle").text().split(" - ");
-    let name = titleRaw[1];
+    let name = titleRaw[1]
+        .replace(/\(.+\)/g, "")
+        .trim();
 
     let classDataRaw = $(".ntdefault").text().split(/\n{1,}/);
     let grading = GradingTypeNames.GRADED;
@@ -614,6 +636,10 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         let classNumber = table[3][tableIndex];
         //let sessionCode = identifierRaw[0] + identifierRaw[1];
         let classSection = identifierRaw[2];
+
+        // let buildingRaw = /([a-zA-Z\s]+)\s(\d{0,5})/.exec(table[15][tableIndex]);
+        // let building = detectBuildingCode(buildingRaw[1]);
+        // let room = buildingRaw[2];
 
         sections.push({
             mode: table[14][tableIndex],
@@ -851,6 +877,14 @@ export const detectNameByAbbreviation = (abbreviation: string): string => {
     if (abbreviation === 'SA') return 'Salem';
     return 'Unknown';
 }
+
+// export const detectBuildingCode = (name: string): BuildingCode => {
+//     for (let [ key, value ] of Object.entries(BuildingCode)) {
+//         console.log(key, value);
+//         if (key === name)
+//             return value;
+//     }
+// }
 
 /**w
  * Returns whether or not the provided campus

@@ -89,6 +89,8 @@ const generateCourseMappings = async () => {
         total: urls.length
     });
 
+    let attributesGained = new Set();
+
     for (let i = 1; i < urls.length; i++) {
         let target = `https://catalog.kent.edu${urls[i]}`;
         let $: cheerio.Root = await axios
@@ -110,6 +112,8 @@ const generateCourseMappings = async () => {
                 console.error("Could not parse:", block.children(".courseblocktitle").text());
                 return;
             }
+
+            attributesGained.add(attributes["Attributes"] ?? "None");
             
             courses.push({
                 name: title.subject + title.number,
@@ -136,6 +140,8 @@ const generateCourseMappings = async () => {
                 : urls[i + 1]
         });
     }
+
+    console.log(attributesGained);
 
     fs.writeFileSync('./courses.json', JSON.stringify(courses.sort((a, b) => a.name.localeCompare(b.name)), null, 3));
     console.log(`\n[*] Finished generating mappings for ${courses.length} courses in ${getLatestTimeValue(Date.now() - start)}.`);
