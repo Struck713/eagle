@@ -621,7 +621,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
          * 21: other
          */
         let tableIndex = lastSectionSeparator + 1;
-        let campus = table[20][tableIndex];
+        let campus = detectCampusByAbbreviation(table[20][tableIndex]);
         let instructor = table[16][tableIndex]
             .replace(/\(.+\)/, "")
             .replace(/\s{2,}/g, " ")
@@ -631,12 +631,12 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         let remainOpen = Number(table[9][tableIndex]);
 
         let identifierRaw = table[4][tableIndex].split(" - ");
-        let classNumber = identifierRaw[2];
+        let classNumber = table[3][tableIndex];
         //let sessionCode = identifierRaw[0] + identifierRaw[1];
-        let classSection = table[3][tableIndex];
+        let classSection = identifierRaw[2];
 
         sections.push({
-            mode: "In Person", // In Person, Online, Hybrid/Blended, Hybrid/Reduced
+            mode: table[14][tableIndex], // In Person, Online, Hybrid/Blended, Hybrid/Reduced
             campus,
             enrollment: {
                 current: enrollment,
@@ -713,7 +713,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
  * @param section the course section to query
  */
 export const searchBySection = async (identifier: string, section: string): Promise<SectionPayload> => {
-    let res = await searchCourse(identifier, detectCampusBySection(section) || 'any');
+    let res = await searchCourse(identifier, 'any');
     if (!res)
         return null;
 
@@ -856,19 +856,15 @@ export const getRmpReport = async (id: string): Promise<RateMyProfessorReport> =
  * 
  * @param section the section name
  */
-export const detectCampusBySection = (section: string): CampusType => {
-    // switch (section.substring(0, 2).toLowerCase()) {
-    //     case 'ke':
-    //         return 'kent';
-    //     case 'ea':
-    //         return 'stamford';
-    //     case 't':
-    //         return 'waterbury';
-    //     case 'n':
-    //         return 'avery_point';
-    //     default:
-    //         return 'storrs';
-    // }
+export const detectCampusByAbbreviation = (abbreviation: string): CampusType => {
+    if (abbreviation === 'KC') return 'kent';
+    if (abbreviation === 'EC') return 'east_liverpool';
+    if (abbreviation === 'TR') return 'trumbull';
+    if (abbreviation === 'TU') return 'tuscarawas';
+    if (abbreviation === 'ST') return 'stark';
+    if (abbreviation === 'GC') return 'geauga';
+    if (abbreviation === 'AC') return 'ashtabula';
+    if (abbreviation === 'SA') return 'salem';
     return 'any';
 }
 
