@@ -11,3 +11,4 @@ courses-*.json
 rmpIds-*.json
 *.tgz
 *.test.ts
+.npmrc

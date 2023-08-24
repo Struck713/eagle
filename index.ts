@@ -593,7 +593,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
     let table = ($section('table.datadisplaytable') as any).parsetable(true, false, true);
     let sections: SectionData[] = [];
 
-    let sectionCount = table[0].filter(x => x.match(COURSE_SEPARATOR)).length;
+    let sectionCount = table.length ? table[0].filter(x => x.match(COURSE_SEPARATOR)).length : 0;
     let lastSectionSeparator = 1;
     for (let i = 0; i < sectionCount; i++) {
         /**
@@ -631,12 +631,12 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         let remainOpen = Number(table[9][tableIndex]);
 
         let identifierRaw = table[4][tableIndex].split(" - ");
-        let sessionCode = table[3][tableIndex];
-        let classNumber = identifierRaw[0] + identifierRaw[1];
-        let classSection = identifierRaw[2];
+        let classNumber = identifierRaw[2];
+        //let sessionCode = identifierRaw[0] + identifierRaw[1];
+        let classSection = table[3][tableIndex];
 
         sections.push({
-            mode: "",
+            mode: "In Person", // In Person, Online, Hybrid/Blended, Hybrid/Reduced
             campus,
             enrollment: {
                 current: enrollment,
@@ -647,13 +647,13 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
             notes: table[21][tableIndex],
             schedule,
             section: classSection,
-            session: sessionCode,
-            term: "",
+            session: "REG", // REG unless it's a Winter session
+            term: "Fall 2023",
             internal: {
                 classNumber,
                 classSection,
-                sessionCode,
-                termCode: ""
+                sessionCode: "1", // always 1
+                termCode: "1233"
             },
             location: []
         });

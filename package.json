@@ -1,9 +1,9 @@
 {
-    "name": "@ilefa/husky",
-    "version": "1.3.0",
-    "author": "ILEFA Labs",
+    "name": "@struck713/eagle",
+    "version": "1.0.1",
+    "author": "Struck713",
     "license": "GPL-3.0",
-    "description": "A collection of utilities pertaining to UConn services.",
+    "description": "A collection of utilities pertaining to Kent State services.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
@@ -15,12 +15,12 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/ilefa/husky.git"
+        "url": "git+https://github.com/Struck713/eagle.git"
     },
     "bugs": {
-        "url": "https://github.com/ilefa/husky/issues"
+        "url": "https://github.com/Struck713/eagle/issues"
     },
-    "homepage": "https://github.com/a/husky#readme",
+    "homepage": "https://github.com/a/eagle#readme",
     "dependencies": {
         "@types/node": "^15.0.0",
         "axios": "^0.21.1",

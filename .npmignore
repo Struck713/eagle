@@ -12,3 +12,4 @@ courses-*.json
 classrooms-*.json
 *.test.ts
 *.tgz
+.npmrc
