@@ -327,7 +327,7 @@ export enum BuildingCode {
     CHH = "Cunningham Hall and Research Wing",
     CHA = "Cunningham Hall and Research Wing",
     CLK = "Clark Hall",
-    CPA = "Center for the Performing Arts",
+    CPA = "Kent Center Performing Arts",
     CPM = "College of Podiatric Medicine",
     CUD = "Cleveland Urban Design Collaborative",
     CUE = "Center for Undergraduate Excellence", 
@@ -424,6 +424,9 @@ export enum BuildingCode {
     RCE = "Main Hall East Wing",
     RCP = "Recreation & Wellness Center",
     RCC = "Conference Center",
+
+    // TRUMBULL BUILDINGS
+    CAM = "Trumbull Classroom Building"
 
 }
 
@@ -573,16 +576,29 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         .trim();
 
     let classDataRaw = $(".ntdefault").text().split(/\n{1,}/);
+    console.log(classDataRaw);
     let grading = GradingTypeNames.GRADED;
-    let credits = (classDataRaw[2] || "0")
-        .replace(/[a-zA-Z]+/g, "")
-        .trim();
     let lastDataMarker = new Date();
 
     let descriptionRaw = classDataRaw[1].split(" Prerequisite: ");
     let description = descriptionRaw[0] || DEFAULT_DESC;
 
-    let prereqs = descriptionRaw[1] || DEFAULT_PREREQS;
+    let prereqs = DEFAULT_PREREQS;
+    let credits = "0";
+
+    // weird special case
+    if (descriptionRaw[1]) {
+        prereqs = descriptionRaw[1];
+        credits = (classDataRaw[2] || "0")
+            .replace(/[a-zA-Z]+/g, "")
+            .trim();
+    } else {
+        prereqs = classDataRaw[2].replace("Prerequisite: ", "");
+        credits = (classDataRaw[3] || "0")
+            .replace(/[a-zA-Z]+/g, "")
+            .trim();
+    }
+    
     if (prereqs.includes('None.')) prereqs = DEFAULT_PREREQS;
 
     if (!include.includes(SearchParts.SECTIONS))
@@ -605,30 +621,6 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
     let sectionCount = table.length ? table[0].filter(x => x.match(COURSE_SEPARATOR)).length : 0;
     let lastSectionSeparator = 1;
     for (let i = 0; i < sectionCount; i++) {
-        /**
-         * 0: status
-         * 1: text book
-         * 2: fees
-         * 3: CRN
-         * 4: identifier - course # - section #
-         * 5: credits
-         * 6: title
-         * 7: attributes
-         * 8: enrollment
-         * 9: remain open
-         * 10: lecture type
-         * 11: meeting dates
-         * 12: days (week)
-         * 13: times
-         * 14: method of instruction
-         * 15: location
-         * 16: instructor
-         * 17: need special approval?
-         * 18: prerequisites
-         * 19: registration deadlines
-         * 20: campus
-         * 21: other
-         */
         let tableIndex = lastSectionSeparator + 1;
         let campus = detectCampusNameByAbbreviation(table[20][tableIndex]);
         let instructor = table[16][tableIndex]
@@ -648,10 +640,27 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         //let sessionCode = identifierRaw[0] + identifierRaw[1];
         let classSection = identifierRaw[2];
 
-        let buildingRaw = /([a-zA-Z\s]+)\s(\d{0,5})/.exec(table[15][tableIndex]);
-        console.log(table[15][tableIndex]);
-        let building = "N/A";
-        if (buildingRaw) building = `${detectBuildingCodeByName(buildingRaw[1])} ${buildingRaw[2]}`;
+        
+        let location: SectionLocationData[] = [];
+        let buildingIndexOffset = 0;
+
+        do {
+            let buildingTableEntry = table[15][tableIndex + (buildingIndexOffset++)];
+            if (buildingTableEntry === 'Web COURSE') {
+                location.push({
+                    name: "Online",
+                    url: "https://canvas.kent.edu"
+                });
+                continue;
+            }
+
+            let buildingRaw = /([a-zA-Z\s]+)\s([\dED]{0,5})/.exec(buildingTableEntry);
+            if (!buildingRaw || !buildingRaw[1] || !buildingRaw[2]) break;
+            let building = `${detectBuildingCodeByName(buildingRaw[1])} ${buildingRaw[2]}`;
+            location.push({
+                name: building,
+            });
+        } while (buildingIndexOffset <= table[15].length);
 
         sections.push({
             mode: table[14][tableIndex],
@@ -673,11 +682,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
                 sessionCode: "1", // always 1
                 termCode: TERM
             },
-            location: [
-                {
-                    name: building,
-                }
-            ]
+            location
         });
         lastSectionSeparator = table[0].findIndex((e, i) => e.match(COURSE_SEPARATOR) && i > lastSectionSeparator);
     }
