@@ -311,7 +311,7 @@ export enum BuildingCode {
     ATB = "Aeronautics and Engineering Building",
     BEA = "Beall Hall",
     BOW = "Bowman Hall",
-    BSA = "Business Administration Building",
+    BSA = "Business Administration Bldg",
     BST = "Baseball and Softball Training Facility",
     CAE = "Center for Architecture and Environmental Design",
     CBH = "Golf Course Clubhouse",
@@ -417,7 +417,7 @@ export enum BuildingCode {
     // STARK BUILDINGS
     RCF = "Fine Arts", // RCA also??
     RCS = "Campus Center",
-    RCL = "Learning Resource Center",
+    RCL = "Stark Library",
     RCM = "Main Hall",
     RCE = "Main Hall East Wing",
     RCP = "Recreation & Wellness Center",
@@ -539,8 +539,6 @@ const getCatalogSections = async (termCode: string, prefix: string, number: stri
  */
 export const searchCourse = async (identifier: string, campus: CampusType = 'any', useMappings: boolean = false, include: SearchParts[] = DEFAULT_SEARCH_PARTS): Promise<CoursePayload> => {
     if (!COURSE_IDENTIFIER.test(identifier)) return null;
-
-    console.log(getTermCodesSurroundingCurrentDate());
     
     let prefix = identifier.split(/[0-9]/)[0].toUpperCase();
     let number = identifier.split(/[a-zA-Z]{2,4}/)[1];
@@ -612,9 +610,9 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
     let professors: ProfessorData[] = [];
 
     for (let termCode of getTermCodesSurroundingCurrentDate()) {
+
         let sectionDataTable = await getCatalogSections(termCode, prefix, number);
-        let $section = cheerio.load(sectionDataTable);
-        tableparse($section);
+        let $section = cheerio.load(sectionDataTable); tableparse($section);
         let table = ($section('table.datadisplaytable') as any).parsetable(true, false, true);
         
         let sectionCount = table.length ? table[0].filter(x => x.match(COURSE_SEPARATOR)).length : 0;
@@ -625,6 +623,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
             let instructor = table[16][tableIndex]
                 .replace(/\(.+\)/, "")
                 .replace(/\s{2,}/g, " ")
+                .replace(" , ", ", ")
                 .trim();
             let schedule = table[12][tableIndex] + " " + table[13][tableIndex];
             let enrollment = Number(table[8][tableIndex]);
@@ -632,13 +631,13 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
 
             let identifierRaw = table[4][tableIndex].split(" - ");
             let classNumber = table[3][tableIndex];
-            //let sessionCode = identifierRaw[0] + identifierRaw[1];
             let classSection = identifierRaw[2];
 
             let location: SectionLocationData[] = [];
             let buildingIndexOffset = 0;
             do {
                 let buildingTableEntry = table[15][tableIndex + (buildingIndexOffset++)];
+                console.log(buildingTableEntry);
                 if (buildingTableEntry === 'Web COURSE') {
                     location.push({
                         name: "Online",
@@ -647,12 +646,10 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
                     continue;
                 }
 
-                let buildingRaw = /([a-zA-Z\s]+)\s([\dED]{0,5})/.exec(buildingTableEntry);
+                let buildingRaw = /([a-zA-Z\s]+)\s([\dED]{5})/.exec(buildingTableEntry);
                 if (!buildingRaw || !buildingRaw[1] || !buildingRaw[2]) break;
                 let building = `${detectBuildingCodeByName(buildingRaw[1])} ${buildingRaw[2]}`;
-                location.push({
-                    name: building,
-                });
+                location.push({ name: building });
             } while (buildingIndexOffset <= table[15].length);
 
             sections.push({
@@ -669,13 +666,13 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
                 section: classSection,
                 session: "Reg", // REG unless it's a Winter session
                 term: getTermNameFromTermCode(termCode),
+                location,
                 internal: {
                     classNumber,
                     classSection,
                     sessionCode: "1", // always 1
-                    termCode: termCode
-                },
-                location
+                    termCode
+                }
             });
             lastSectionSeparator = table[0].findIndex((e, i) => e.match(COURSE_SEPARATOR) && i > lastSectionSeparator);
         }
@@ -692,7 +689,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         if (!include.includes(SearchParts.PROFESSORS)) continue;
 
         for (let section of sections) {
-            let profs = section.instructor.split(" , "); // /\s{0,},\s{0,}/
+            let profs = section.instructor.split(", "); // /\s{0,},\s{0,}/
             for (let prof of profs) {
                 if (professors.some(p => p.name === prof)) continue;
         
@@ -707,7 +704,6 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
                     rmpIds: rmp ? rmp.rmpIds : []
                 });
             }
-            section.instructor = profs.join(", ");
         }
     }
 
@@ -957,9 +953,9 @@ const getTermCodesSurroundingCurrentDate = () => {
     let quarter = current.get("quarter"); // we only have 3 sessions
 
     switch (quarter) {
-        case 0:  return [ `${year}${TERM_CODES[0]}`, `${year}${TERM_CODES[1]}`, `${year}${TERM_CODES[2]}` ];
-        case 1:  return [ `${year}${TERM_CODES[1]}`, `${year}${TERM_CODES[2]}`, `${year + 1}${TERM_CODES[0]}` ]
-        default: return [ `${year}${TERM_CODES[2]}`, `${year + 1}${TERM_CODES[0]}`, `${year + 1}${TERM_CODES[1]}` ];
+        case 0:  return [ `${year}${TERM_CODES[0]}`, `${year}${TERM_CODES[1]}` ];
+        case 1:  return [ `${year}${TERM_CODES[1]}`, `${year}${TERM_CODES[2]}` ]
+        default: return [ `${year}${TERM_CODES[2]}`, `${year + 1}${TERM_CODES[0]}` ];
     }
 }
 
