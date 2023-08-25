@@ -637,7 +637,6 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
             let buildingIndexOffset = 0;
             do {
                 let buildingTableEntry = table[15][tableIndex + (buildingIndexOffset++)];
-                console.log(buildingTableEntry);
                 if (buildingTableEntry === 'Web COURSE') {
                     location.push({
                         name: "Online",
@@ -647,9 +646,10 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
                 }
 
                 let buildingRaw = /([a-zA-Z\s]+)\s([\dED]{5})/.exec(buildingTableEntry);
-                if (!buildingRaw || !buildingRaw[1] || !buildingRaw[2]) break;
-                let building = `${detectBuildingCodeByName(buildingRaw[1])} ${buildingRaw[2]}`;
-                location.push({ name: building });
+                let buildingCode = buildingRaw ? detectBuildingCodeByName(buildingRaw[1]) : undefined;
+                if (!buildingCode || !buildingRaw[2]) break;
+                
+                location.push({ name: `${buildingCode} ${buildingRaw[2]}` });
             } while (buildingIndexOffset <= table[15].length);
 
             sections.push({
