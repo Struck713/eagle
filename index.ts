@@ -302,6 +302,8 @@ export enum LectureCaptureType {
 }
 
 export enum BuildingCode {
+
+    // KENT BUILDINGS
     AFC = "FedEx Aeronautics Academic Center",
     AAC = "Allerton Sports Complex",
     AIR = "Airport Hangar/Office Bldg.", 
@@ -413,7 +415,17 @@ export enum BuildingCode {
     WRT = "Wright Hall",
     WTH = "White Hall",
     ZZR = "Starbucks Building",
-    ZZS = "Cutler Building"
+    ZZS = "Cutler Building",
+
+    // STARK BUILDINGS
+    RCF = "Fine Arts", // RCA also??
+    RCS = "Campus Center",
+    RCL = "Learning Resource Center",
+    RCM = "Main Hall",
+    RCE = "Main Hall East Wing",
+    RCP = "Recreation & Wellness Center",
+    RCC = "Conference Center",
+
 }
 
 export type CampusType = 'any' 
@@ -619,7 +631,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
          * 21: other
          */
         let tableIndex = lastSectionSeparator + 1;
-        let campus = detectNameByAbbreviation(table[20][tableIndex]);
+        let campus = detectCampusNameByAbbreviation(table[20][tableIndex]);
         let instructor = table[16][tableIndex]
             .replace(/\(.+\)/, "")
             .replace(/\s{2,}/g, " ")
@@ -638,8 +650,9 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         let classSection = identifierRaw[2];
 
         let buildingRaw = /([a-zA-Z\s]+)\s(\d{0,5})/.exec(table[15][tableIndex]);
-        let building = detectBuildingCode(buildingRaw[1]);
-        let room = buildingRaw[2];
+        console.log(table[15][tableIndex]);
+        let building = "N/A";
+        if (buildingRaw) building = `${detectBuildingCodeByName(buildingRaw[1])} ${buildingRaw[2]}`;
 
         sections.push({
             mode: table[14][tableIndex],
@@ -663,7 +676,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
             },
             location: [
                 {
-                    name: `${building} ${room}`,
+                    name: building,
                 }
             ]
         });
@@ -704,6 +717,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
                 rmpIds: rmp ? rmp.rmpIds : []
             });
         }
+        section.instructor = profs.join(", ");
     }
 
     return {
@@ -866,7 +880,7 @@ export const getRmpReport = async (id: string): Promise<RateMyProfessorReport> =
  * 
  * @param section the section name
  */
-export const detectNameByAbbreviation = (abbreviation: string): string => {
+export const detectCampusNameByAbbreviation = (abbreviation: string): string => {
     if (abbreviation === 'KC') return 'Kent';
     if (abbreviation === 'EC') return 'East Liverpool';
     if (abbreviation === 'TR') return 'Trumbull';
@@ -878,7 +892,7 @@ export const detectNameByAbbreviation = (abbreviation: string): string => {
     return 'Unknown';
 }
 
-export const detectBuildingCode = (name: string): string => {
+export const detectBuildingCodeByName = (name: string): string => {
     for (let key of Object.keys(BuildingCode)) {
         if (BuildingCode[key] === name)
             return key;
