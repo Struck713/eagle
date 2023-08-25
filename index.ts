@@ -570,7 +570,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
     
     let titleRaw = $(".nttitle").text().split(" - ");
     let name = titleRaw[1]
-        .replace(/\(.+\)/g, "")
+        .replace(/\(\w+\)/g, "")
         .trim();
 
     let classDataRaw = $(".ntdefault").text().split(/\n{1,}/);
@@ -638,7 +638,6 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
             let buildingIndexOffset = 0;
             do {
                 let buildingTableEntry = table[15][tableIndex + (buildingIndexOffset++)];
-                console.log(instructor, buildingTableEntry);
                 if (buildingTableEntry === 'Web COURSE') {
                     location.push({
                         name: "Online",
