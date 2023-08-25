@@ -313,7 +313,7 @@ export enum BuildingCode {
     BOW = "Bowman Hall",
     BSA = "Business Administration Bldg",
     BST = "Baseball and Softball Training Facility",
-    CAE = "Center for Architecture and Environmental Design",
+    CAE = "Center For Architecture And En",
     CBH = "Golf Course Clubhouse",
     CCA = "Centennial Court A",
     CCB = "Centennial Court B",
@@ -352,7 +352,7 @@ export enum BuildingCode {
     HAR = "Harbourt Hall",
     HDN = "Henderson Hall",
     HRH = "Heer Hall",
-    IAB = "Center for Philanthropy and Alumni Engagement",
+    IAB = "Center for Philanthropy and Alumni Engagement", //Keith S Lloyd Fine Arts Building - Addition
     ICA = "Ice Arena", 
     ISB = "Integrated Sciences Building",
     JHN = "Johnson Hall", 
@@ -362,7 +362,7 @@ export enum BuildingCode {
     KTH = "Kent Hall and South Wing",
     KTA = "Kent Hall and South Wing",
     LAK = "Lake Hall",
-    LCM = "Liquid Crystals Materials Science Building", 
+    LCM = "Liq Crystals Matl Science Bldg", 
     LEE = "Leebrick Hall",
     LIB = "Library", 
     LNB = "Lincoln Building",
@@ -415,7 +415,8 @@ export enum BuildingCode {
     ZZS = "Cutler Building",
 
     // STARK BUILDINGS
-    RCF = "Fine Arts", // RCA also??
+    RCF = "Fine Arts Building", // RCA also??
+    RCA = "Fine Arts Building - Addition",
     RCS = "Campus Center",
     RCL = "Stark Library",
     RCM = "Main Hall",
@@ -637,6 +638,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
             let buildingIndexOffset = 0;
             do {
                 let buildingTableEntry = table[15][tableIndex + (buildingIndexOffset++)];
+                console.log(instructor, buildingTableEntry);
                 if (buildingTableEntry === 'Web COURSE') {
                     location.push({
                         name: "Online",
@@ -645,10 +647,10 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
                     continue;
                 }
 
-                let buildingRaw = /([a-zA-Z\s]+)\s([\dED]{5})/.exec(buildingTableEntry);
+                let buildingRaw = /([a-zA-Z\s\\-]+)\s([\dED]{5})/.exec(buildingTableEntry);
                 let buildingCode = buildingRaw ? detectBuildingCodeByName(buildingRaw[1]) : undefined;
                 if (!buildingCode || !buildingRaw[2]) break;
-                
+
                 location.push({ name: `${buildingCode} ${buildingRaw[2]}` });
             } while (buildingIndexOffset <= table[15].length);
 
