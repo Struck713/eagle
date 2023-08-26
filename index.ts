@@ -24,8 +24,6 @@ import similarity from 'string-similarity';
 import CourseMappings from './courses.json';
 import tableparse from 'cheerio-tableparser';
 
-import { decode as decodeEntity } from 'html-entities';
-
 export const COURSE_IDENTIFIER = /^[a-zA-Z]{2,4}\d{3,5}(Q|E|W)*$/;
 export const COURSE_SEPARATOR = /-{342}/
 export const SECTION_IDENTIFIER = /^(H|Z|W|N)*\d{2,3}(L|D|X)*$/;
@@ -637,8 +635,8 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
             let location: SectionLocationData[] = [];
             let buildingIndexOffset = 0;
             do {
-                let buildingTableEntry = table[15][tableIndex + (buildingIndexOffset++)];
-                if (buildingTableEntry === 'Web COURSE') {
+                let buildingNameRaw = table[15][tableIndex + (buildingIndexOffset++)];
+                if (buildingNameRaw === 'Web COURSE') {
                     location.push({
                         name: "Online",
                         url: "https://canvas.kent.edu"
@@ -646,7 +644,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
                     continue;
                 }
 
-                let buildingRaw = /([a-zA-Z\s\\-]+)\s([\dED]{5})/.exec(buildingTableEntry);
+                let buildingRaw = /([a-zA-Z\s\\-]+)\s([\dED]{5})/.exec(buildingNameRaw);
                 let buildingCode = buildingRaw ? detectBuildingCodeByName(buildingRaw[1]) : undefined;
                 if (!buildingCode || !buildingRaw[2]) break;
 

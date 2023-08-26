@@ -19,6 +19,8 @@ import axios from 'axios';
 import cheerio from 'cheerio';
 import fs from 'fs';
 import progress from 'progress';
+import { ContentArea } from '..';
+import { ContentAreaNames } from '..';
 
 type Course = {
     name: string;
@@ -46,14 +48,6 @@ type CourseAttributes = {
     environmental: boolean;
     contentAreas: ContentArea[];
     graduate: boolean;
-}
-
-enum ContentArea {
-    CA1 = 'CA1',
-    CA2 = 'CA2',
-    CA3 = 'CA3',
-    CA4 = 'CA4',
-    CA4INT = 'CA4INT'
 }
 
 const DEFAULT_PREREQS = 'There are no prerequisites for this course.';
@@ -89,7 +83,7 @@ const generateCourseMappings = async () => {
         total: urls.length
     });
 
-    let attributesGained = new Set();
+    let attributesGained = {};
 
     for (let i = 1; i < urls.length; i++) {
         let target = `https://catalog.kent.edu${urls[i]}`;
@@ -113,7 +107,7 @@ const generateCourseMappings = async () => {
                 return;
             }
 
-            attributesGained.add(attributes["Attributes"] ?? "None");
+            //console.log(readContentAreas(attributes["Attributes"]))
             
             courses.push({
                 name: title.subject + title.number,
@@ -125,7 +119,7 @@ const generateCourseMappings = async () => {
                     writing: false, //hasCompetency(row, 'COMPW'),
                     quantitative: false, //hasCompetency(row, 'COMPQ'),
                     environmental: false, //hasCompetency(row, 'COMPE'),
-                    contentAreas: [],
+                    contentAreas: readContentAreas(attributes["Attributes"]),
                     graduate: parseInt(title.number) >= 50000
                 },
                 credits: title.credits,
@@ -141,8 +135,6 @@ const generateCourseMappings = async () => {
         });
     }
 
-    console.log(attributesGained);
-
     fs.writeFileSync('./courses.json', JSON.stringify(courses.sort((a, b) => a.name.localeCompare(b.name)), null, 3));
     console.log(`\n[*] Finished generating mappings for ${courses.length} courses in ${getLatestTimeValue(Date.now() - start)}.`);
 }
@@ -153,7 +145,9 @@ const readTitle = (title?: string) => {
     return {
         subject: groups[1],
         number: groups[2],
-        name: groups[3].trim(),
+        name: groups[3]
+            .replace(/\(\w+\)/g, "")
+            .trim(),
         credits: parseInt(groups[4])
     };
 }
@@ -165,6 +159,16 @@ const readAttributes = (attributes?: string[]) => {
          map[key] = value.trim();
     }
     return map;
+}
+
+const readContentAreas = (attributes?: string) => {
+    if (!attributes) return [];
+    let entries = Object.entries(ContentAreaNames);
+    return attributes.split(", ").map(area => {
+        for (let [ key, value ] of entries) {
+            if (value === area) return key;
+        }
+    }) as ContentArea[];
 }
 
 const hasCompetency = (row: CoursePayload, competency: string) =>
