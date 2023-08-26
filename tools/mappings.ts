@@ -19,15 +19,14 @@ import axios from 'axios';
 import cheerio from 'cheerio';
 import fs from 'fs';
 import progress from 'progress';
-import { ContentArea } from '..';
-import { ContentAreaNames } from '..';
+import { CourseAttributes, ContentAreaNames, ContentArea } from '../index';
 
 type Course = {
     name: string;
     catalogName: string;
     catalogNumber: string;
     prerequisites: string;
-    attributes: CourseAttributes; 
+    attributes: CourseAttributes & { graduate: boolean }; 
     credits: number;
     grading: string;
     description: string;
@@ -39,15 +38,6 @@ type CoursePayload = {
     number: string;
     name: string;
     attrib: string[];
-}
-
-type CourseAttributes = {
-    lab: boolean;
-    writing: boolean;
-    quantitative: boolean;
-    environmental: boolean;
-    contentAreas: ContentArea[];
-    graduate: boolean;
 }
 
 const DEFAULT_PREREQS = 'There are no prerequisites for this course.';
@@ -107,7 +97,7 @@ const generateCourseMappings = async () => {
                 return;
             }
 
-            //console.log(readContentAreas(attributes["Attributes"]))
+            let contentAreas = readContentAreas(attributes["Attributes"]);
             
             courses.push({
                 name: title.subject + title.number,
@@ -115,11 +105,17 @@ const generateCourseMappings = async () => {
                 catalogNumber: title.number,
                 prerequisites: attributes["Prerequisite"] ?? DEFAULT_PREREQS,
                 attributes: {
-                    lab: false, //hasCompetency(row, 'CA3LAB'),
-                    writing: false, //hasCompetency(row, 'COMPW'),
-                    quantitative: false, //hasCompetency(row, 'COMPQ'),
-                    environmental: false, //hasCompetency(row, 'COMPE'),
-                    contentAreas: readContentAreas(attributes["Attributes"]),
+                    core: hasContentArea(contentAreas, ContentArea.KADL, 
+                                                       ContentArea.KBS, 
+                                                       ContentArea.KCMP, 
+                                                       ContentArea.KFA, 
+                                                       ContentArea.KSS, 
+                                                       ContentArea.KMCR, 
+                                                       ContentArea.KLAB),
+                    diversity: hasContentArea(contentAreas, ContentArea.DIVD, ContentArea.DIVG),
+                    honors: hasContentArea(contentAreas, ContentArea.HONR),
+                    writing: hasContentArea(contentAreas, ContentArea.WIC),
+                    contentAreas,
                     graduate: parseInt(title.number) >= 50000
                 },
                 credits: title.credits,
@@ -171,10 +167,12 @@ const readContentAreas = (attributes?: string) => {
     }) as ContentArea[];
 }
 
-const hasCompetency = (row: CoursePayload, competency: string) =>
-    row
-        .attrib
-        .some(attrib => attrib === competency.toUpperCase());
+const hasContentArea = (contentAreas: ContentArea[], ...toInclude: ContentArea[]) => {
+    for (let area of toInclude) {
+        if (contentAreas.includes(area)) return true;
+    }
+    return false;
+}
 
 const getLatestTimeValue = (time: number) => {
     let sec = Math.trunc(time / 1000) % 60;

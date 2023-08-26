@@ -43,10 +43,10 @@ export type CompleteCoursePayload = {
 }
 
 export type CourseAttributes = {
-    lab: boolean;
+    core: boolean;
+    diversity: boolean;
+    honors: boolean;
     writing: boolean;
-    quantitative: boolean;
-    environmental: boolean;
     contentAreas: ContentArea[];
 }
 
