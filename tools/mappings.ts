@@ -98,6 +98,7 @@ const generateCourseMappings = async () => {
             }
 
             let contentAreas = readContentAreas(attributes["Attributes"]);
+            //if (contentAreas.includes(undefined) || contentAreas.includes(null)) console.log(attributes["Attributes"]);
             
             courses.push({
                 name: title.subject + title.number,
@@ -159,12 +160,13 @@ const readAttributes = (attributes?: string[]) => {
 
 const readContentAreas = (attributes?: string) => {
     if (!attributes) return [];
+    
     let entries = Object.entries(ContentAreaNames);
-    return attributes.split(", ").map(area => {
+    return (attributes.split(", ").map(area => {
         for (let [ key, value ] of entries) {
             if (value === area) return key;
         }
-    }) as ContentArea[];
+    }) as ContentArea[]);
 }
 
 const hasContentArea = (contentAreas: ContentArea[], ...toInclude: ContentArea[]) => {
