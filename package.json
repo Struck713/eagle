@@ -1,6 +1,6 @@
 {
     "name": "@struck713/eagle",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "author": "Struck713",
     "license": "GPL-3.0",
     "description": "A collection of utilities pertaining to Kent State services.",
@@ -11,7 +11,8 @@
         "prepare": "rm -rf dist && npm run build",
         "mappings": "ts-node tools/mappings",
         "merge": "ts-node tools/merge",
-        "classrooms": "ts-node tools/classrooms"
+        "classrooms": "ts-node tools/classrooms",
+        "professors": "ts-node tools/professors"
     },
     "repository": {
         "type": "git",

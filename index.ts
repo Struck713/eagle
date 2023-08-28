@@ -19,15 +19,16 @@ import qs from 'qs';
 import axios from 'axios';
 import moment from 'moment';
 import cheerio from 'cheerio';
-import RmpIds from './rmpIds.json';
 import similarity from 'string-similarity';
-import CourseMappings from './courses.json';
 import tableparse from 'cheerio-tableparser';
+
+import CourseMappings from './courses.json';
+import ProfessorMappings from './professors.json';
+import RmpIds from './rmpIds.json';
 
 export const COURSE_IDENTIFIER = /^[a-zA-Z]{2,4}\d{3,5}(Q|E|W)*$/;
 export const COURSE_SEPARATOR = /-{342}/
 export const SECTION_IDENTIFIER = /^(H|Z|W|N)*\d{2,3}(L|D|X)*$/;
-export const SCHOOL_RMP_ID = "U2Nob29sLTQ4Mg==";
 
 export type CompleteCoursePayload = {
     name: string;
@@ -433,6 +434,17 @@ export type EnrollmentPayload = {
     percent: number;
 }
 
+export interface Professor {
+    name: string;
+    title?: string;
+    department?: string;
+    status?: string;
+    building?: string;
+    mailBox?: string;
+    email: string;
+    phone?: string;
+}
+
 export enum RmpCampusIds {
     KENT = 'U2Nob29sLTQ4Mg==',
     EAST_LIVERPOOL = 'U2Nob29sLTIzMTA=',
@@ -724,13 +736,58 @@ export const searchBySection = async (identifier: string, section: string): Prom
     }
 }
 
+const PROFESSOR_NAME_REGEX = /(\w+)\s?([a-zA-Z.]+)?\s(\w+)/;
+
+/**
+ * This function will attempt to find a professor in the professor mappings
+ * and then query more data about the professor from Kent. If the professor
+ * doesn't exist in the mappings, it will return null.
+ * 
+ * @param name The name of the professor you want to find
+ * @param deep If true, will also gather extra information about the professor.
+ * @returns A Professor object containing information about the professor.
+ */
+export const searchProfessors = async (name: string, deep: boolean = true) => {
+
+    let match = PROFESSOR_NAME_REGEX.exec(name);
+    if (!match) return null;
+
+    let professor = (ProfessorMappings as any).find(ent => ent.name === name); 
+    if (!professor) return null;
+    if (!deep) return professor;
+
+    let $ = await axios.post("https://keys.kent.edu/ePROD/bwgkphon.P_DisplayAllRecords", qs.stringify({
+        CALLING_PROC_NAME: "",
+        CALLING_PROC_NAME2: "",
+        firstname: match[1],
+        lastname: match[3],
+    })).then(res => cheerio.load(res.data))
+       .catch(_ => null);
+
+    if (!$) return professor;
+    tableparse($);
+
+    let table = ($(".dataentrytable") as any).parsetable(false, false, true);
+
+    return {
+        name: professor.name,
+        status: table[1][2],
+        title: table[1][3],
+        department: table[1][4],
+        building: table[1][9],
+        mailBox: table[1][10],
+        email: professor.email,
+        phone: table[1][7],
+    }
+}
+
 /**
  * Attempts to locate entries on RMP
  * for a specified professor.
  * 
  * @param instructor the instructor to search for
  */
-export const searchRMP = async (instructor: string): Promise<RateMyProfessorResponse> => {
+export const searchRMP = async (instructor: string, campus: RmpCampusIds = RmpCampusIds.KENT): Promise<RateMyProfessorResponse> => {
     let local = RmpIds.find(ent => ent.name.toLowerCase() === instructor.toLowerCase());
     if (local) return {
         name: instructor,
@@ -755,7 +812,7 @@ export const searchRMP = async (instructor: string): Promise<RateMyProfessorResp
             query: `
                 query NewSearch {
                     newSearch {
-                        teachers(query: {text: "${instructor}", schoolID: "${SCHOOL_RMP_ID}"}) {
+                        teachers(query: {text: "${instructor}", schoolID: "${campus}"}) {
                             resultCount
                             edges {
                                 node {

@@ -8,6 +8,7 @@ node_modules/
 .DS_Store
 classrooms-*.json
 courses-*.json
+professors-*.json
 rmpIds-*.json
 *.tgz
 *.test.ts

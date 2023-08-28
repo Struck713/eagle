@@ -73,8 +73,6 @@ const generateCourseMappings = async () => {
         total: urls.length
     });
 
-    let attributesGained = {};
-
     for (let i = 1; i < urls.length; i++) {
         let target = `https://catalog.kent.edu${urls[i]}`;
         let $: cheerio.Root = await axios
