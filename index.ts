@@ -507,7 +507,7 @@ const getCatalogSections = async (termCode: string, prefix: string, number: stri
 
 /**
  * Attempts to retrieve data regarding
- * a specific UConn course, and returns
+ * a specific Kent course, and returns
  * all sections, metadata, and other related
  * data about it.
  * 
@@ -683,8 +683,8 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         for (let section of sections) {
             let profs = section.instructor.split(", "); // /\s{0,},\s{0,}/
             for (let prof of profs) {
-                if (professors.some(p => p.name === prof)) continue;
-                
+                if (professors.some(p => p.name === prof) || prof === "TBA") continue;
+
                 let rmp = await searchRMP(prof, detectRMPCampusId(section.campus));
                 let teaching = sections
                         .filter(section => section.instructor.split(" , ").includes(prof))
