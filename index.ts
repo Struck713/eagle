@@ -28,7 +28,7 @@ export const COURSE_IDENTIFIER = /^[a-zA-Z]{2,4}\d{3,5}(Q|E|W)*$/;
 export const COURSE_SEPARATOR = /-{342}/
 export const SECTION_IDENTIFIER = /^(H|Z|W|N)*\d{2,3}(L|D|X)*$/;
 
-const PROFESSOR_NAME_REGEX = /(\w+)\s?([a-zA-Z.]+)?\s(\w+)/;
+const PROFESSOR_NAME_REGEX = /(\w+)\s?([a-zA-Z.]+)?\s(\w+)/g;
 
 export type CompleteCoursePayload = {
     name: string;
@@ -615,6 +615,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
                 .replace(/\(.+\)/, "")
                 .replace(/\s{2,}/g, " ")
                 .replace(" , ", ", ")
+                .replace(PROFESSOR_NAME_REGEX, "$1 $3")
                 .trim();
             let schedule = table[12][tableIndex] + " " + table[13][tableIndex];
             let enrollment = Number(table[8][tableIndex]);
@@ -682,11 +683,9 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         for (let section of sections) {
             let profs = section.instructor.split(", "); // /\s{0,},\s{0,}/
             for (let prof of profs) {
-    
-                let strippedName = PROFESSOR_NAME_REGEX.exec(prof);
                 if (professors.some(p => p.name === prof)) continue;
-
-                let rmp = await searchRMP(strippedName ? `${strippedName[1]} ${strippedName[3]}` : prof, detectRMPCampusId(section.campus));
+                
+                let rmp = await searchRMP(prof, detectRMPCampusId(section.campus));
                 let teaching = sections
                         .filter(section => section.instructor.split(" , ").includes(prof))
                         .sort((a, b) => a.section.localeCompare(b.section));
