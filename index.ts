@@ -24,7 +24,6 @@ import tableparse from 'cheerio-tableparser';
 
 import CourseMappings from './courses.json';
 import ProfessorMappings from './professors.json';
-import RmpIds from './rmpIds.json';
 
 export const COURSE_IDENTIFIER = /^[a-zA-Z]{2,4}\d{3,5}(Q|E|W)*$/;
 export const COURSE_SEPARATOR = /-{342}/
@@ -609,6 +608,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         let lastSectionSeparator = 1;
         for (let i = 0; i < sectionCount; i++) {
             let tableIndex = lastSectionSeparator + 1;
+
             let campus = detectCampusNameByAbbreviation(table[20][tableIndex]);
             let instructor = table[16][tableIndex]
                 .replace(/\(.+\)/, "")
@@ -677,13 +677,13 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         }
         
         if (!include.includes(SearchParts.PROFESSORS)) continue;
-
+        
         for (let section of sections) {
             let profs = section.instructor.split(", "); // /\s{0,},\s{0,}/
             for (let prof of profs) {
                 if (professors.some(p => p.name === prof)) continue;
         
-                let rmp = await searchRMP(prof);
+                let rmp = await searchRMP(prof, detectRMPCampusId(section.campus));
                 let teaching = sections
                         .filter(section => section.instructor.split(" , ").includes(prof))
                         .sort((a, b) => a.section.localeCompare(b.section));
@@ -788,24 +788,26 @@ export const searchProfessors = async (name: string, deep: boolean = true) => {
  * @param instructor the instructor to search for
  */
 export const searchRMP = async (instructor: string, campus: RmpCampusIds = RmpCampusIds.KENT): Promise<RateMyProfessorResponse> => {
-    let local = RmpIds.find(ent => ent.name.toLowerCase() === instructor.toLowerCase());
-    if (local) return {
-        name: instructor,
-        rmpIds: local.rmpIds
-    }
 
-    let similar = RmpIds
-        .map(entry => ({ ...entry, similarity: similarity.compareTwoStrings(instructor, entry.name) }))
-        .sort((a, b) => b.similarity - a.similarity)
-        .filter(entry => entry.similarity > 0.70);
+    // this code doesn't really need to be here, the GraphQL API is so much faster
 
-    if (similar.length) return {
-        name: similar[0].name,
-        rmpIds: similar[0].rmpIds  
-    }
+    // let local = RmpIds.find(ent => ent.name.toLowerCase() === instructor.toLowerCase());
+    // if (local) return {
+    //     name: instructor,
+    //     rmpIds: local.rmpIds
+    // }
 
-    if (!instructor.trim() || instructor.split(',').length)
-        return null;
+    // let similar = RmpIds
+    //     .map(entry => ({ ...entry, similarity: similarity.compareTwoStrings(instructor, entry.name) }))
+    //     .sort((a, b) => b.similarity - a.similarity)
+    //     .filter(entry => entry.similarity > 0.70);
+
+    // if (similar.length) return {
+    //     name: similar[0].name,
+    //     rmpIds: similar[0].rmpIds  
+    // }
+
+    if (!instructor.trim() || instructor.split(',').length) return null;
 
     let res = await axios.post(`https://www.ratemyprofessors.com/graphql`, 
         {
@@ -891,17 +893,6 @@ export const getRmpReport = async (id: string): Promise<RateMyProfessorReport> =
     };
 }
 
-/**
- * Attempts to guess what campus a certain
- * section is being taught at.
- * 
- * Notice: This method will not always work,
- * as off-campus courses and Storrs courses
- * both do not have alphabetic prefixes, and
- * just start with a the section number.
- * 
- * @param section the section name
- */
 export const detectCampusNameByAbbreviation = (abbreviation: string): string => {
     if (abbreviation === 'KC') return 'Kent';
     if (abbreviation === 'EC') return 'East Liverpool';
@@ -919,6 +910,17 @@ export const detectBuildingCodeByName = (name: string): string => {
         if (BuildingCode[key] === name)
             return key;
     }
+}
+
+export const detectRMPCampusId = (abbreviation: string): RmpCampusIds => {
+    if (abbreviation === 'East Liverpool') return RmpCampusIds.EAST_LIVERPOOL;
+    if (abbreviation === 'Trumbull') return RmpCampusIds.TRUMBULL;
+    if (abbreviation === 'Tuscarawas') return RmpCampusIds.TUSCARAWAS;
+    if (abbreviation === 'Stark') return RmpCampusIds.STARK;
+    if (abbreviation === 'Geauga') return RmpCampusIds.GEAUGA;
+    if (abbreviation === 'Ashtabula') return RmpCampusIds.ASHTABULA;
+    if (abbreviation === 'Salem') return RmpCampusIds.SALEM;
+    return RmpCampusIds.KENT; // default to kent
 }
 
 /**w
