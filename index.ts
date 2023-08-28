@@ -510,6 +510,7 @@ export enum BuildingCode {
     RTM = "Trumbull Classroom Building",
     RTW = "Workforce Development Center",
     RTL = "Library - Theater Building",
+    RTT = "Science and Technology Building",
 
     // GEAUGA
     RGA = "Regional Academic Center",
@@ -519,10 +520,12 @@ export enum BuildingCode {
     // SALEM
     RSG = "Salem Greenhouse",
     RSM = "Salem Campus",
+    RSC = "City Center",
 
     // EAST LIVERPOOL
     REM = "Purinton Hall",
     REB = "College Hall",
+    REP = "Mary Patterson Building",
 
     // TUSCARAWAS
     RNT = "Science and Advanced Technology Center",
@@ -533,6 +536,7 @@ export enum BuildingCode {
     RAT = "Technology Building",
     RAM = "Main Building",
     RAH = "Robert S. Morrison Health and Science Building",
+    RAL = "Ashtabula Library",
 
 }
 
