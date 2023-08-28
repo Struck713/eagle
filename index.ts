@@ -110,61 +110,61 @@ export enum ContentArea {
 
 export enum ContentAreaNames {
 
-    BLOS = "BLOS",
-    DIVD = "DIVD",
-    DIVG = "DIVG",
-    EMBA = "EMBA",
-    ELR = "ELR",
-    HONR = "HONR",
-    KADL = "KADL",
-    KBS = "KBS",
-    KLAB = "KLAB",
-    KCMP = "KCMP",
-    KFA = "KFA",
-    KHUM = "KHUM",
-    KMCR = "KMCR",
-    KSS = "KSS",
-    WIC = "WIC",
+    BLOS = "Blossom Summer",
+    DIVD = "Diversity Domestic",
+    DIVG = "Diversity Global",
+    EMBA = "Executive MBA",
+    ELR = "Experiential Learning Requirement",
+    HONR = "Honors Course",
+    KADL = "Kent Core Additional",
+    KBS = "Kent Core Basic Sciences",
+    KLAB = "Kent Core Basic Sciences Lab",
+    KCMP = "Kent Core Composition",
+    KFA = "Kent Core Fine Arts",
+    KHUM = "Kent Core Humanities",
+    KMCR = "Kent Core Mathematics and Critical Reasoning",
+    KSS = "Kent Core Social Sciences",
+    WIC = "Writing Intensive Course",
 
-    ATTG = "ATTG",
-    EETG = "EETG",
-    ATIT = "ATIT",
-    FLTG = "FLTG",
-    SBST = "SBST",
-    AHTG = "AHTG",
-    CMTG = "CMTG",
-    NSLT = "NSLT",
-    SCTG = "SCTG",
-    ETTG = "ETTG",
-    BSTG = "BSTG",
-    EDTG = "EDTG",
-    EDCT = "EDCT",
-    ENCT = "ENCT",
-    HETG = "HETG",
-    PACT = "PACT",
+    ATTG = "CTAG Air Transportation",
+    EETG = "CTAG Electrical Engineer Technology",
+    ATIT = "ITAG Aircraft Transportation",
+    FLTG = "TAG Foreign Language",
+    SBST = "TAG Social and Behavioral Sciences",
+    AHTG = "TAG Arts and Humanities",
+    CMTG = "TAG Communication",
+    NSLT = "TAG Natural Science Lab",
+    SCTG = "TAG Science",
+    ETTG = "TAG Engineering Technology",
+    BSTG = "TAG Business",
+    EDTG = "TAG Education",
+    EDCT = "CTAG Education",
+    ENCT = "CTAG Entrepreneurship",
+    HETG = "TAG Health",
+    PACT = "CTAG Performing Arts",
     NAIT = "ITAG Nursing/Associate Degree",
     NACT = "CTAG Nursing/Associate Degree",
-    MECT = "MECT",
-    MEIT = "MEIT",
-    MMTG = "MMTG",
-    ESCT = "ESCT",
-    PFCT = "PFCT",
-    CFCT = "CFCT",
-    CTIT = "CTIT",
-    EMTG = "EMTG",
-    CJCT = "CJCT",
-    MTCT = "MTCT",
-    HSTG = "HSTG",
-    ETIT = "ETIT",
-    HTCT = "HTCT",
-    EGCT = "EGCT",
+    MECT = "CTAG Mechanical Engineering Technology",
+    MEIT = "ITAG Mechanical Engineering Technology",
+    MMTG = "TAG Mathematics",
+    ESCT = "CTAG Exercise Science",
+    PFCT = "CTAG Personal Finance",
+    CFCT = "CTAG Culinary and Food Service",
+    CTIT = "ITAG Culinary and Food Service",
+    EMTG = "TAG Engineering",
+    CJCT = "CTAG Criminal Justice",
+    MTCT = "CTAG Medical Terminology",
+    HSTG = "TAG History",
+    ETIT = "ITAG Engineering Technology",
+    HTCT = "CTAG Horticulture",
+    EGCT = "CTAG Engineering Graphics",
 
-    TMNS = "TMNS",
-    TMFA = "TMFA",
-    TMHM = "TMHM",
-    TMSS = "TMSS",
-    TMCP = "TMCP",
-    TMMM = "TMMM",
+    TMNS = "Transfer Module Natural Sciences",
+    TMFA = "Transfer Module Fine Arts",
+    TMHM = "Transfer Module Humanities",
+    TMSS = "Transfer Module Social Sciences",
+    TMCP = "Transfer Module Composition",
+    TMMM = "Transfer Module Mathematics",
 
 }
 
@@ -243,140 +243,6 @@ export type RateMyProfessorReport = {
     takeAgain: number;
     difficulty: number;
     tags: string[];
-}
-
-export type Classroom = {
-    name: string;
-    building: {
-        name: string;
-        code: string;
-        campus: string;
-    };
-    room: string;
-    techType: string;
-    techDescription?: string;
-    seatingType: keyof typeof SeatingType;
-    boardType: keyof typeof BoardType;
-    capacity: {
-        covid: number;
-        full: number;
-    };
-    byodTesting?: boolean;
-    airConditioned?: boolean;
-    videoConference: ClassroomConferenceType;
-    lectureCapture: keyof typeof LectureCaptureType;
-    liveStreamUrl?: string;
-    threeSixtyView: string;
-}
-
-export type ConferenceTypeCapabilities = {
-    shareContent: boolean;
-    instructorFacingCamera: boolean;
-    studentFacingCamera: boolean;
-    presentMediaFrontOfRoom: boolean;
-    presentMediaBackOfRoom: boolean;
-    instructorMicrophone: boolean;
-    studentMicrophone: boolean;
-    connectToWebex: boolean;
-}
-
-export class ClassroomConferenceType {
-
-    static readonly FULL = new ClassroomConferenceType('FULL', 'Full Video Conference', {
-        shareContent: true,
-        instructorFacingCamera: true,
-        studentFacingCamera: true,
-        presentMediaFrontOfRoom: true,
-        presentMediaBackOfRoom: true,
-        instructorMicrophone: true,
-        studentMicrophone: true,
-        connectToWebex: true
-    });
-    
-    static readonly TEACH_FROM = new ClassroomConferenceType('TEACH_FROM', 'Teach From Video Conference', {
-        shareContent: true,
-        instructorFacingCamera: true,
-        studentFacingCamera: false,
-        presentMediaFrontOfRoom: false,
-        presentMediaBackOfRoom: true,
-        instructorMicrophone: true,
-        studentMicrophone: false,
-        connectToWebex: true    
-    });
-    
-    static readonly SEMINAR = new ClassroomConferenceType('SEMINAR', 'Seminar Video Conference', {
-        shareContent: true,
-        instructorFacingCamera: true,
-        studentFacingCamera: false,
-        presentMediaFrontOfRoom: true,
-        presentMediaBackOfRoom: false,
-        instructorMicrophone: true,
-        studentMicrophone: true,
-        connectToWebex: true
-    });
-    
-    static readonly NONE = new ClassroomConferenceType('NONE', 'None', {
-        shareContent: false,
-        instructorFacingCamera: false,
-        studentFacingCamera: false,
-        presentMediaFrontOfRoom: false,
-        presentMediaBackOfRoom: false,
-        instructorMicrophone: false,
-        studentMicrophone: false,
-        connectToWebex: false
-    });
-
-    private constructor(private readonly key: string, public readonly name: string, public readonly attributes: ConferenceTypeCapabilities) {}
-
-    static fromString = (input: string) => {
-        let valid = ['FULL', 'TEACH_FROM', 'SEMINAR'];
-        if (valid.some(v => input.toLowerCase() === v))
-            return ClassroomConferenceType[input.toUpperCase()];
-
-        return valid
-            .map(v => ClassroomConferenceType[v])
-            .map(ent => {
-                let k = ent as ClassroomConferenceType;
-                if (k.name.toLowerCase() === input.toLowerCase())
-                    return k;
-            })
-            .filter(ent => !!ent)
-            .map(({ name, attributes }) => ({ name, attributes }))[0];
-    }
-
-    toString = () => this.key;
-
-}
-
-export enum SeatingType {
-    TABLES = 'Tables',
-    TABLES_AND_ARMCHAIRS = 'Tables and Tablet Armchairs',
-    TABLET_ARMCHAIRS = 'Tablet Armchairs',
-    FIXED_AUDITORIUM = 'Fixed/Auditorium',
-    FIXED_TABLES = 'Fixed Seating Tables',
-    FIXED_LEVELED_TABLES = 'Fixed Tier Leveled Tables',
-    LAB_TABLES = 'Lab Tables and Chairs',
-    ACTIVE = 'Active Learning',
-    UNKNOWN = 'Unknown'
-}
-
-export enum TechType {
-    FULL = 'Full Hi-Tech',
-    BASIC = 'Basic Hi-Tech',
-    UNKNOWN = 'Unknown',
-}
-
-export enum BoardType {
-    NONE = 'None',
-    WHITEBOARD = 'Whiteboard',
-    CHALKBOARD = 'Chalkboard',
-    UNKNOWN = 'Unknown'
-}
-
-export enum LectureCaptureType {
-    ALL = 'All',
-    NONE = 'None',
-    SELF_SERVICE_RECORDING = 'Self Service Recording'
 }
 
 export enum BuildingCode {
