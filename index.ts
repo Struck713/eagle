@@ -462,7 +462,7 @@ const DEFAULT_DESC = 'There is no description provided for this course.';
 const DEFAULT_SEARCH_PARTS = [SearchParts.SECTIONS, SearchParts.PROFESSORS];
 
 const getCatalogUrl = async (prefix: string, number: string) => await axios.
-    get(`https://keys.kent.edu/ePROD/bwckctlg.p_display_courses?term_in=202380&one_subj=${prefix}&sel_crse_strt=${number}&sel_crse_end=${number}&sel_subj=&sel_levl=&sel_schd=&sel_coll=&sel_divs=&sel_dept=&sel_attr=`)
+    get(`https://keys.kent.edu/ePROD/bwckctlg.p_display_courses?term_in=${getCurrentTermCode()}&one_subj=${prefix}&sel_crse_strt=${number}&sel_crse_end=${number}&sel_subj=&sel_levl=&sel_schd=&sel_coll=&sel_divs=&sel_dept=&sel_attr=`)
     .then(res => res.data)
     .catch(_ => null);
 
@@ -600,6 +600,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
     let professors: ProfessorData[] = [];
 
     for (let termCode of getTermCodesSurroundingCurrentDate()) {
+        console.log(termCode);
 
         let sectionDataTable = await getCatalogSections(termCode, prefix, number);
         let $section = cheerio.load(sectionDataTable); tableparse($section);
@@ -607,6 +608,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
         
         let sectionCount = table.length ? table[0].filter(x => x.match(COURSE_SEPARATOR)).length : 0;
         let lastSectionSeparator = 1;
+        console.log(sectionCount);
         for (let i = 0; i < sectionCount; i++) {
             let tableIndex = lastSectionSeparator + 1;
 
@@ -789,24 +791,6 @@ export const searchProfessors = async (name: string, deep: boolean = true) => {
  */
 export const searchRMP = async (instructor: string, campus: RmpCampusIds = RmpCampusIds.KENT): Promise<RateMyProfessorResponse> => {
 
-    // this code doesn't really need to be here, the GraphQL API is so much faster
-
-    // let local = RmpIds.find(ent => ent.name.toLowerCase() === instructor.toLowerCase());
-    // if (local) return {
-    //     name: instructor,
-    //     rmpIds: local.rmpIds
-    // }
-
-    // let similar = RmpIds
-    //     .map(entry => ({ ...entry, similarity: similarity.compareTwoStrings(instructor, entry.name) }))
-    //     .sort((a, b) => b.similarity - a.similarity)
-    //     .filter(entry => entry.similarity > 0.70);
-
-    // if (similar.length) return {
-    //     name: similar[0].name,
-    //     rmpIds: similar[0].rmpIds  
-    // }
-
     let res = await axios.post(`https://www.ratemyprofessors.com/graphql`, 
         {
             query: `
@@ -988,9 +972,21 @@ const getTermCodesSurroundingCurrentDate = () => {
     let quarter = current.get("quarter"); // we only have 3 sessions
 
     switch (quarter) {
-        case 0:  return [ `${year}${TERM_CODES[0]}`, `${year}${TERM_CODES[1]}` ];
-        case 1:  return [ `${year}${TERM_CODES[1]}`, `${year}${TERM_CODES[2]}` ]
+        case 1:  return [ `${year}${TERM_CODES[0]}`, `${year}${TERM_CODES[1]}` ];
+        case 2:  return [ `${year}${TERM_CODES[1]}`, `${year}${TERM_CODES[2]}` ]
         default: return [ `${year}${TERM_CODES[2]}`, `${year + 1}${TERM_CODES[0]}` ];
+    }
+}
+
+const getCurrentTermCode = () => {
+    let current = moment();
+    let year = current.get("year");
+    let quarter = current.get("quarter"); // we only have 3 sessions
+
+    switch (quarter) {
+        case 1:  return `${year}${TERM_CODES[0]}`;
+        case 2:  return `${year}${TERM_CODES[1]}`;
+        default: return `${year}${TERM_CODES[2]}`;
     }
 }
 

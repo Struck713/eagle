@@ -116,4 +116,4 @@ const getLatestTimeValue = (time: number) => {
     return result.trim();
 }
 
-generateProfessorMappings("", "")
+generateProfessorMappings("", ""); // put your CSRF token and cookies here
