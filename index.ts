@@ -614,7 +614,7 @@ export const searchCourse = async (identifier: string, campus: CampusType = 'any
             let instructor = table[16][tableIndex]
                 .replace(/\(.+\)/, "")
                 .replace(/\s{2,}/g, " ")
-                .replace(" , ", ", ")
+                .replace(/\s,\s/g, ", ")
                 .replace(PROFESSOR_NAME_REGEX, "$1 $3")
                 .trim();
             let schedule = table[12][tableIndex] + " " + table[13][tableIndex];
